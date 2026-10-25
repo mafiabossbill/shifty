@@ -38,8 +38,10 @@ function createStore(extra?: Partial<StoreDeps>): ShiftStore {
   });
 }
 
+const channel: BroadcastChannel | null = typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel("shifty-store");
+
 export function ShiftProvider({ children, derive = deriveRewards }: { children: ReactNode; derive?: StoreDeps["derive"] }) {
-  const [store] = useState(() => (singleton ??= createStore({ derive })));
+  const [store] = useState(() => (singleton ??= createStore({ derive, announce: () => channel?.postMessage("changed") })));
 
   useEffect(() => {
     let cancelled = false;
@@ -51,8 +53,14 @@ export function ShiftProvider({ children, derive = deriveRewards }: { children: 
       await store.checkSafetyLimit();
       void store.syncNow();
     })();
+    // Another tab wrote to the shared log: re-read it (demo tabs are memory-only and ignore this).
+    const fromOtherTab = () => {
+      if (!store.getSnapshot().demo) void store.reload();
+    };
+    channel?.addEventListener("message", fromOtherTab);
     const wake = () => {
       if (document.visibilityState === "visible") {
+        fromOtherTab();
         void store.checkSafetyLimit();
         store.scheduleSync(0);
       }
@@ -69,6 +77,7 @@ export function ShiftProvider({ children, derive = deriveRewards }: { children: 
     const safety = setInterval(() => void store.checkSafetyLimit(), 15_000);
     return () => {
       cancelled = true;
+      channel?.removeEventListener("message", fromOtherTab);
       document.removeEventListener("visibilitychange", wake);
       window.removeEventListener("online", online);
       window.removeEventListener("offline", offline);

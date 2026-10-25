@@ -39,7 +39,7 @@ Template roles `manager` and `viewer` have no capabilities and are unused.
 | R06 | Sync is idempotent and never silently overwrites: replay = original result; stale correction = 409 → Needs attention; purged sessions never come back | database (unique event id, tombstone), api, ui | replay / stale / post-purge route tests; e2e offline |
 | R07 | A person sees and changes only their own rows | database (RLS `user_id = auth.uid()` + membership) | `scripts/check-rls.ts` member/admin/outsider cases |
 | R08 | XP never grows with hours; capped per session and day; ledger deterministic and idempotent; corrections write reversals; unlocks and levels never removed | database (unique `(user_id, event_key)`), api | reward engine tests (8 h vs 20 h equal XP) |
-| R09 | One person's sessions never overlap (trash excluded) | database (deferrable exclusion constraint), api 409, ui | route test naming the other session |
+| R09 | No unintentional overlap: clock-in, manual entry, import, restore and corrections that overlap another session are refused naming it; the person may save an overlap only after an explicit confirm | reducer (shared by device + server), api 409, ui confirm | reducer + route + e2e tests |
 | R10 | Deleting a location fix removes its coordinates everywhere (row hard-deleted, event payload redacted) | database, api, ui | DB + device-log + export tests |
 
 Acceptance anchors: Mon 18:00 → Tue 10:00 = 1 session, 16 h, Mon 6 h + Tue 10 h. With a Tue 02:00–02:30 break: 15 h 30 net, Mon 6 h + Tue 9 h 30.
@@ -126,16 +126,15 @@ Phone bottom nav: Home · Sessions · Insights · Companion · Settings. "Device
 | --- | --- | --- | --- | --- |
 | `/` | Greeting + Mochi, Clock in / active hero, goal ring, last session, week sparkline | all + device mode | Clock in / Clock out | dashboard |
 | `/sessions` | History, filters, search, Needs attention | all + device mode | Add session | cards |
-| `/sessions/[id]` | Timeline, per-day split, breaks, fixes, revisions, edit, conflicts | all + device mode | Edit | detail |
+| `/sessions/view?id=` | Timeline, per-day split, breaks, fixes, revisions, edit, rezone (query param so it opens offline) | all + device mode | Edit | detail |
 | `/sessions/new` | Manual entry | all + device mode | Save session | form |
 | `/sessions/trash` | Restore or empty | all + device mode | Restore | cards |
 | `/insights` | Charts and reports | all + device mode | — | dashboard |
 | `/companion` | Mochi, level, achievements, wardrobe | all + device mode | Equip | cards |
-| `/settings` | Preferences, sync status | all + device mode | — | form |
+| `/settings`, `/settings/sessions`, `/settings/appearance`, `/settings/pay`, `/settings/places`, `/settings/device` | Goal, timezone, week start, reminders, safety limit, theme, pay, remembered places, install + platform capabilities | all + device mode | — | form |
 | `/settings/privacy` | Location, retention, saved places | all + device mode | Delete location history | form |
 | `/settings/data` | Export, print, import, upload device data | all + device mode | Export | form |
-| `/settings/account` | Profile, password, my data, delete account | admin, member | Save | form |
-| `/settings/team` | Invite, role, deactivate (template) | admin | Invite | cards |
+| `/settings/account` | Device mode status, sign in/out (wipes device), upload device data, erase device, my data, delete account | all + device mode | Sign in | form |
 | `/login`, `/signup` | Auth | public | Sign in / Sign up | public |
 | `/privacy`, `/terms`, `/cookies`, `/data-deletion` | Legal | public | — | public |
 
@@ -194,7 +193,7 @@ None. Trash age, location retention and the safety limit are applied determinist
 | A07 | Rewards are a pure function of history, reconciled with reversal rows; unlocks and levels kept | assumed |
 | A08 | Clock-out undo grace 8 s; end = tap time | assumed |
 | A09 | Trash keeps sessions 30 days; the user empties it; no purge job | assumed |
-| A10 | One person's sessions never overlap; overlapping entries/imports/corrections refused | assumed |
+| A10 | Overlaps are refused unless the person explicitly confirms ("Save anyway"); not a DB constraint (D10) | confirmed in build |
 | A11 | Safety limit off by default; when on (20 h) the session ends at start + limit, labelled, applied deterministically | assumed |
 | A12 | Location retention default 90 days (30/90/365/keep) | assumed |
 | A13 | Signing in from device mode offers to upload local sessions; nothing uploads without a tap | assumed |

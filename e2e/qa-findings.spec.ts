@@ -57,7 +57,6 @@ test("QA-M2: active hero midnight line adds up to the net readout", async ({ pag
 // installed PWA next to a browser tab) still shows "Clock in" after the other clocked in, accepts a parallel
 // clock-in, and only after a reload does that work turn into "Needs attention".
 test("QA-M3: a second open tab shows the running session once it comes to the front", async ({ page, context }) => {
-  test.fail(!process.env.QA_SHOW_BUGS, "QA-M3 open: no cross-tab refresh (BroadcastChannel / storage re-read on focus)");
   const other = await context.newPage();
   await openHome(page);
   await openHome(other);

@@ -338,3 +338,22 @@ describe("foreign data", () => {
     expect((await d.persistence.load()).events).toHaveLength(0);
   });
 });
+
+describe("two tabs", () => {
+  it("M3: a tab that hears about another tab's clock-in shows it and refuses a second one", async () => {
+    const persistence = new MemoryPersistence();
+    const clock = { t: Date.UTC(2026, 9, 26, 15) };
+    const tabs: ShiftStore[] = [];
+    const make = () =>
+      new ShiftStore({ persistence, transport: null, clock: () => clock.t, deviceTimeZone: () => DAR, announce: () => tabs.forEach((t) => void t.reload()) });
+    const a = make();
+    const b = make();
+    tabs.push(a, b);
+    await a.init();
+    await b.init();
+    const s = await a.clockIn();
+    await sleep(5);
+    expect(b.getSnapshot().active?.id).toBe(s.id);
+    await expect(b.clockIn()).rejects.toBeInstanceOf(ShiftActionError);
+  });
+});

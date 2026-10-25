@@ -12,7 +12,6 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function safeNextPath(value: unknown): string {
   const next = typeof value === "string" ? value : "";
-  // eslint-disable-next-line no-control-regex
   if (!next.startsWith("/") || next.startsWith("//") || /[\u0000-\u001f\u007f\\]/.test(next)) return "/";
   try {
     const base = "https://same.origin.invalid";

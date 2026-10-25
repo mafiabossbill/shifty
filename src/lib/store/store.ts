@@ -102,6 +102,8 @@ export interface StoreDeps {
   /** Undo window after clock-out (A08). */
   undoMs?: number;
   demo?: boolean;
+  /** Tells other tabs of this app that the stored log changed (BroadcastChannel in the browser). */
+  announce?: () => void;
   /** Turns the view into reward ledger rows / achievements to append (wired to src/lib/rewards). */
   derive?: (view: StoreView, now: number) => { ledger: LedgerEntry[]; achievements: EarnedAchievement[]; highestLevel: number } | null;
 }
@@ -185,6 +187,38 @@ export class ShiftStore {
 
   // ─── Lifecycle ────────────────────────────────────────────────────────────
   async init(): Promise<void> {
+    await this.loadFromDisk();
+    this.ready = true;
+    this.recompute();
+  }
+
+  /**
+   * Another tab changed the stored log: read it again so this tab never acts on a stale view (a second
+   * clock-in from an old tab would otherwise become "Needs attention"). Deferred while a sync is running.
+   */
+  async reload(): Promise<void> {
+    if (!this.ready) return;
+    if (this.syncing) {
+      this.reloadPending = true;
+      return;
+    }
+    await this.writeChain;
+    await this.loadFromDisk();
+    this.recompute();
+  }
+
+  private reloadPending = false;
+
+  /** Called after a change other tabs should see. Never from reload/recompute (no ping-pong). */
+  private announce() {
+    try {
+      this.deps.announce?.();
+    } catch {
+      // another tab missing an update only means it refreshes on focus
+    }
+  }
+
+  private async loadFromDisk(): Promise<void> {
     try {
       const snap = await this.deps.persistence.load();
       this.events = snap.events.sort((a, b) => a.seq - b.seq);
@@ -198,8 +232,6 @@ export class ShiftStore {
     } catch (error) {
       this.loadError = (error as Error).message || "This browser blocked storage.";
     }
-    this.ready = true;
-    this.recompute();
   }
 
   subscribe = (listener: () => void) => {
@@ -328,6 +360,7 @@ export class ShiftStore {
     await this.persist(() => this.deps.persistence.putEvent(stored));
     this.events.push(stored);
     this.recompute();
+    this.announce();
     this.scheduleSync(opts.holdMs ? opts.holdMs + 200 : 300);
     return result.session;
   }
@@ -382,6 +415,7 @@ export class ShiftStore {
     this.events = this.events.filter((e) => e !== stored);
     this.setUndo(null);
     this.recompute();
+    this.announce();
     return true;
   }
 
@@ -508,6 +542,7 @@ export class ShiftStore {
     this.events = this.events.filter((e) => !drop.includes(e));
     for (const e of this.events) if (e.status === "rejected") e.status = "local";
     this.recompute();
+    this.announce();
     this.scheduleSync();
   }
 
@@ -529,6 +564,7 @@ export class ShiftStore {
     await this.persist(() => this.deps.persistence.putProfile(next));
     await this.persist(() => this.deps.persistence.putMeta(this.meta));
     this.recompute();
+    this.announce();
     this.scheduleSync();
   }
 
@@ -592,6 +628,7 @@ export class ShiftStore {
     this.mode = "device";
     this.setUndo(null);
     this.recompute();
+    this.announce();
   }
 
   syncNow(): Promise<void> {
@@ -602,6 +639,10 @@ export class ShiftStore {
     }
     this.syncing = this.runSync().finally(() => {
       this.syncing = null;
+      if (this.reloadPending) {
+        this.reloadPending = false;
+        void this.reload();
+      }
       if (this.syncAgain) {
         this.syncAgain = false;
         this.scheduleSync(50);
@@ -673,6 +714,7 @@ export class ShiftStore {
       this.failures = 0;
       this.backoffUntil = 0;
       this.setPhase("idle");
+      this.announce();
     } catch (error) {
       for (const e of this.events) if (e.status === "syncing") e.status = "local";
       this.failures++;
