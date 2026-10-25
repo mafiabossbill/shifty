@@ -338,6 +338,38 @@ begin
   select count(*) into n from shift_events
    where user_id = s_owner and session_id = (fx ->> 'A')::uuid and type = 'location' and payload -> 'fix' ->> 'latitude' is not null;
   r := r || jsonb_build_object('shift_kept_coordinates', n);
+  -- M1: purged C's events are tombstones (id, type, sessionId, at); its title and notes are gone everywhere.
+  select count(*) into n from shift_events
+   where user_id = s_owner and session_id = (fx ->> 'C')::uuid and payload - 'id' - 'type' - 'sessionId' - 'at' <> '{}'::jsonb;
+  r := r || jsonb_build_object('shift_purged_payload_keys_left', n);
+  select count(*) into n from shift_events where user_id = s_owner and session_id = (fx ->> 'C')::uuid and 'purged' = any (flags);
+  r := r || jsonb_build_object('shift_purged_events_tombstoned', n);
+  select count(*) into n from shift_events
+   where user_id = s_owner and (payload::text like '%Private note%' or payload::text like '%Secret client%' or payload::text like '%confidential%');
+  r := r || jsonb_build_object('shift_purged_text_left', n);
+  -- L1 + M3: deleting fix X of imported session I blanked X inside the import payload; Y still has coordinates.
+  select count(*) filter (where l.loc ->> 'id' = fx ->> 'fixX' and l.loc ->> 'latitude' is null and l.loc ->> 'placeLabel' is null)
+       + count(*) filter (where l.loc ->> 'id' = fx ->> 'fixY' and l.loc ->> 'latitude' is not null)
+    into n
+    from shift_events e, jsonb_array_elements(e.payload -> 'session' -> 'locations') l(loc)
+   where e.user_id = s_owner and e.session_id = (fx ->> 'I')::uuid and e.type = 'import_session';
+  r := r || jsonb_build_object('shift_import_fix_redacted', n);
+  -- L3: size caps on documents the owner writes directly.
+  begin
+    update user_settings set settings = jsonb_build_object('pad', repeat('x', 70000)) where user_id = s_owner;
+    r := r || jsonb_build_object('shift_settings_size', 'allowed');
+  exception when others then
+    get stacked diagnostics v_state = returned_sqlstate, v_con = constraint_name;
+    r := r || jsonb_build_object('shift_settings_size', trim(v_state || ' ' || coalesce(v_con, '')));
+  end;
+  begin
+    insert into shift_events (id, organization_id, user_id, type, happened_at, recorded_at, device_time_zone, payload)
+    values (gen_random_uuid(), org_a, s_owner, 'annotate', now(), now(), 'UTC', jsonb_build_object('pad', repeat('x', 300000)));
+    r := r || jsonb_build_object('shift_event_payload_size', 'allowed');
+  exception when others then
+    get stacked diagnostics v_state = returned_sqlstate, v_con = constraint_name;
+    r := r || jsonb_build_object('shift_event_payload_size', trim(v_state || ' ' || coalesce(v_con, '')));
+  end;
   reset role;
 
   -- Nobody else sees or changes any of it: another member, an admin of the same org, an outsider, a viewer.
@@ -407,6 +439,47 @@ begin
   select ${OWNER_ROWS} into n;
   r := r || jsonb_build_object('shift_owner_rows_total', n);
 
+  -- M2: demoted to viewer, the owner still sees, exports and deletes their own data, but can't add to it.
+  update organization_members set role = 'viewer' where organization_id = org_a and profile_id = s_owner;
+  perform set_config('request.jwt.claims', json_build_object('sub', s_owner, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from jsonb_object_keys(load_shift_state() -> 'sessions');
+  r := r || jsonb_build_object('shift_demoted_sessions', n);
+  select jsonb_array_length(export_my_shift_data() -> 'sessions') into n;
+  r := r || jsonb_build_object('shift_demoted_export_sessions', n);
+  begin
+    v_res := commit_shift_event(fx -> 'cases' -> 0 -> 'event', fx -> 'cases' -> 0 -> 'session', (fx -> 'cases' -> 0 ->> 'sessionId')::uuid, 0);
+    r := r || jsonb_build_object('shift_demoted_commit', v_res ->> 'status');
+  exception when others then
+    get stacked diagnostics v_state = returned_sqlstate;
+    r := r || jsonb_build_object('shift_demoted_commit', v_state);
+  end;
+  begin
+    insert into work_projects (id, organization_id, user_id, name, color, updated_ms) values (gen_random_uuid(), org_a, s_owner, 'New', 'sky', 1);
+    r := r || jsonb_build_object('shift_demoted_insert', 'allowed');
+  exception when others then
+    r := r || jsonb_build_object('shift_demoted_insert', 'denied');
+  end;
+  delete from saved_places where user_id = s_owner;
+  get diagnostics n = row_count;
+  r := r || jsonb_build_object('shift_demoted_deleted_places', n);
+  -- M1 through a direct DELETE: B's events become tombstones too.
+  delete from shift_sessions where id = (fx ->> 'B')::uuid;
+  get diagnostics n = row_count;
+  r := r || jsonb_build_object('shift_demoted_deleted_sessions', n);
+  select count(*) into n from shift_events
+   where user_id = s_owner and session_id = (fx ->> 'B')::uuid and (payload - 'id' - 'type' - 'sessionId' - 'at' <> '{}'::jsonb or not ('purged' = any (flags)));
+  r := r || jsonb_build_object('shift_direct_delete_untombstoned', n);
+  reset role;
+  -- Deactivated: still sees their own data.
+  update organization_members set role = 'member', deactivated_at = now() where organization_id = org_a and profile_id = s_owner;
+  perform set_config('request.jwt.claims', json_build_object('sub', s_owner, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from jsonb_object_keys(load_shift_state() -> 'sessions');
+  r := r || jsonb_build_object('shift_deactivated_sessions', n);
+  reset role;
+  update organization_members set deactivated_at = null where organization_id = org_a and profile_id = s_owner;
+
   -- Instants: epoch ms survive timestamptz exactly (every ms of three seconds, both range ends, 200k random).
   select count(*) into n from (
     select ms from (values (946684800000::bigint), (4102444800000), (1761400000123), (1761400000999), (1761400000001)) v(ms)
@@ -425,7 +498,11 @@ begin
   r := r || jsonb_build_object('shift_location_fixes_deleted', delete_location_fixes());
   select count(*) into n from location_snapshots where user_id = s_owner;
   r := r || jsonb_build_object('shift_location_rows_left', n);
-  select count(*) into n from shift_events where user_id = s_owner and type = 'location' and payload -> 'fix' ->> 'latitude' is not null;
+  select count(*) into n from shift_events e
+   where e.user_id = s_owner
+     and ((e.type = 'location' and e.payload -> 'fix' ->> 'latitude' is not null)
+          or (e.type = 'import_session' and exists (
+                select 1 from jsonb_array_elements(e.payload -> 'session' -> 'locations') l(loc) where l.loc ->> 'latitude' is not null)));
   r := r || jsonb_build_object('shift_location_coordinates_left', n);
   select revision - v_rev into n from shift_sessions where id = (fx ->> 'A')::uuid;
   r := r || jsonb_build_object('shift_location_delete_revision_step', n);
@@ -547,11 +624,26 @@ const SHIFT_EXPECTATIONS: [string, (v: unknown) => boolean][] = [
   ["shift_case_admin_update", is("P0002")],
   ["shift_case_outsider_update", is("P0002")],
   ["shift_case_viewer_commit", is("42501")],
+  ["shift_case_foreign_event_id", is("23505 shift_events_pkey")],
+  ["shift_purged_payload_keys_left", is(0)],
+  ["shift_purged_events_tombstoned", is(4)],
+  ["shift_purged_text_left", is(0)],
+  ["shift_import_fix_redacted", is(2)],
+  ["shift_settings_size", is("23514 user_settings_settings_size")],
+  ["shift_event_payload_size", is("23514 shift_events_payload_size")],
+  ["shift_demoted_sessions", is(4)],
+  ["shift_demoted_export_sessions", is(4)],
+  ["shift_demoted_commit", is("42501")],
+  ["shift_demoted_insert", is("denied")],
+  ["shift_demoted_deleted_places", is(1)],
+  ["shift_demoted_deleted_sessions", is(1)],
+  ["shift_direct_delete_untombstoned", is(0)],
+  ["shift_deactivated_sessions", is(3)],
   ["shift_owner_append_only_changed", is(0)],
   ["shift_ledger_duplicate_key", is("23505 reward_ledger_entries_user_key")],
   ["shift_purged_coordinates_left", is(0)],
   ["shift_kept_coordinates", is(1)],
-  ["shift_owner_export_sessions", is(3)],
+  ["shift_owner_export_sessions", is(4)],
   ["shift_peer_sees", is(0)],
   ["shift_peer_state", (v) => isDeepStrictEqual(v, { sessions: {} })],
   ["shift_peer_session", is(null)],
@@ -566,7 +658,7 @@ const SHIFT_EXPECTATIONS: [string, (v: unknown) => boolean][] = [
   ["shift_anon_load", is("denied")],
   ["shift_ms_roundtrip_mismatches", is(0)],
   ["shift_ms_exact_instant", is(true)],
-  ["shift_location_fixes_deleted", is(1)],
+  ["shift_location_fixes_deleted", is(2)],
   ["shift_location_rows_left", is(0)],
   ["shift_location_coordinates_left", is(0)],
   ["shift_location_delete_revision_step", is(1)],

@@ -46,9 +46,12 @@ describe("migrations", () => {
     ];
     const APPEND_ONLY = ["shift_events", "reward_ledger_entries", "session_revisions", "user_achievements"];
     const all = migrations.map((m) => m.body).join("\n");
-    const policies = [...all.matchAll(/create policy (\w+) on (\w+) for (select|insert|update|delete|all)\b([\s\S]*?);/gi)].map((m) => ({
-      name: m[1], table: m[2], command: m[3].toLowerCase(), body: m[4],
-    }));
+    // The LAST definition of each policy name wins (later migrations drop and recreate).
+    const latest = new Map<string, { name: string; table: string; command: string; body: string }>();
+    for (const m of all.matchAll(/create policy (\w+) on (\w+) for (select|insert|update|delete|all)\b([\s\S]*?);/gi)) {
+      latest.set(m[1], { name: m[1], table: m[2], command: m[3].toLowerCase(), body: m[4] });
+    }
+    const policies = [...latest.values()];
 
     it("are created inside the range, each with an owner FK to profiles", () => {
       for (const table of SHIFT_TABLES) {
@@ -61,14 +64,19 @@ describe("migrations", () => {
       }
     });
 
-    it("only ever show a person their own rows, and only with shift:track (admins included)", () => {
+    it("only ever show a person their own rows (admins included); writing needs shift:track", () => {
       for (const table of SHIFT_TABLES) {
         const own = policies.filter((p) => p.table === table);
         expect(own.length, `${table} has policies`).toBeGreaterThan(0);
         for (const p of own) {
           expect(p.body, p.name).toMatch(/user_id = \(select auth\.uid\(\)\)/);
-          expect(p.body, p.name).toMatch(/has_capability\(organization_id, 'shift:track'\)/);
           expect(p.command, p.name).not.toBe("all");
+          if (p.command === "insert" || p.command === "update") {
+            expect(p.body, p.name).toMatch(/has_capability\(organization_id, 'shift:track'\)/);
+          } else {
+            // Reading and deleting one's own data never depends on role or membership (security review M2).
+            expect(p.body.trim(), p.name).toBe("to authenticated\n  using (user_id = (select auth.uid()))");
+          }
         }
       }
     });
@@ -84,6 +92,12 @@ describe("migrations", () => {
       for (const table of SHIFT_TABLES) {
         expect(all, table).not.toMatch(new RegExp(`on ${table}\\s+for each row execute function private\\.audit_row_change`, "i"));
       }
+    });
+
+    it("tombstone a deleted session's events and accept imported sessions", () => {
+      expect(all).toMatch(/create trigger shift_sessions_tombstone_events after delete on shift_sessions/);
+      const types = [...all.matchAll(/add constraint shift_events_type_check check \(type in \(([\s\S]*?)\)\)/g)].at(-1)?.[1] ?? "";
+      expect(types).toContain("'import_session'");
     });
 
     it("run the commit and load RPCs as the caller, so RLS applies", () => {

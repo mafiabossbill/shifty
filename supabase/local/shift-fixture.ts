@@ -72,10 +72,24 @@ export function shiftFixture() {
   // C: manual entry with a captured location, deleted, then purged (its events stay, coordinates redacted).
   const C = id();
   const C0 = T0 - 3 * 24 * H;
-  apply(ev(T0 + 19 * H, { type: "manual_create", sessionId: C, startedAt: C0, endedAt: C0 + 2 * H, breaks: [], goalSeconds: 3600, reportingTimeZone: ZONE }));
+  apply(ev(T0 + 19 * H, { type: "manual_create", sessionId: C, startedAt: C0, endedAt: C0 + 2 * H, breaks: [], goalSeconds: 3600, reportingTimeZone: ZONE, title: "Secret client", notes: "Private note", tags: ["confidential"], payRateMinor: 99_000, currency: "TZS" }));
   apply(ev(T0 + 19 * H + 1, { type: "location", sessionId: C, fix: { ...fixCaptured, id: id(), event: "retry", requestedAt: C0 + 5, capturedAt: C0 + 9 } }));
   apply(ev(T0 + 19 * H + 2, { type: "delete", sessionId: C }));
   apply(ev(T0 + 19 * H + 3, { type: "purge", sessionId: C }));
+
+  // I: an imported finished session with two captured fixes; deleting one blanks it inside the import payload too.
+  const I = id();
+  const I0 = T0 - 14 * 24 * H;
+  const fixX = { ...fixCaptured, id: id(), event: "clock_in" as const, status: "captured" as const, requestedAt: I0 + 1, capturedAt: I0 + 2, latitude: -3.3869, longitude: 36.6830 };
+  const fixY = { ...fixCaptured, id: id(), event: "clock_out" as const, status: "captured" as const, requestedAt: I0 + 6 * H, capturedAt: I0 + 6 * H + 3, latitude: -3.3870, longitude: 36.6831 };
+  const imported: ShiftSession = {
+    id: I, originEventId: id(), originalStartedAt: I0, startedAt: I0, endedAt: I0 + 6 * H, origin: "manual",
+    reportingTimeZone: ZONE, startTimeZone: ZONE, endTimeZone: ZONE, goalSeconds: 6 * 3600, title: "Imported", notes: "",
+    projectId: null, tags: [], payRateMinor: null, currency: null, mood: null, energy: null, breaks: [],
+    locations: [fixX, fixY], revisions: [], flags: [], archivedAt: null, deletedAt: null, revision: 1, createdAt: I0, updatedAt: I0 + 6 * H,
+  };
+  apply(ev(T0 + 19 * H + 10, { type: "import_session", sessionId: I, session: imported }));
+  apply(ev(T0 + 19 * H + 11, { type: "location_delete", sessionId: I, fixId: fixX.id }));
 
   // D: running session; a correction SWAPS two breaks (needs the deferred overlap check), then a rezone.
   const D = id();
@@ -100,6 +114,8 @@ export function shiftFixture() {
   const onD = (key: string, as: Case["as"], session: ShiftSession, expected = d.revision): Case => ({ key, as, event: ev(D0 + 6 * H, { type: "annotate", sessionId: D, changes: {} }), session, sessionId: D, expected });
   const brk = (startedAt: number, endedAt: number | null) => ({ id: id(), startedAt, endedAt, kind: "rest" as const });
   const missing = id();
+  const b = state.sessions[B];
+  const peerOwn = id();
   const cases: Case[] = [
     { key: "duplicate", as: "owner", ...steps[0] },
     { key: "second_active", as: "owner", event: ev(D0 + 6 * H, { type: "clock_in", sessionId: E, goalSeconds: 3600, reportingTimeZone: ZONE }), session: { ...d, id: E, originEventId: id(), breaks: [], locations: [], revisions: [], revision: 1 }, sessionId: E, expected: 0 },
@@ -114,6 +130,8 @@ export function shiftFixture() {
     onD("peer_update", "peer", next({ title: "hijacked" })),
     onD("admin_update", "admin", next({ title: "hijacked" })),
     onD("outsider_update", "outsider", next({ title: "hijacked" })),
+    // L2: an event id someone else already stored is a conflict, never a "duplicate".
+    { key: "foreign_event_id", as: "peer", event: { ...ev(T0, { type: "manual_create", sessionId: peerOwn }), id: steps[0].event.id } as ShiftEvent, session: { ...b, id: peerOwn, projectId: null, revision: 1 }, sessionId: peerOwn, expected: 0 },
     { key: "viewer_commit", as: "viewer", event: ev(D0 + 6 * H, { type: "clock_in", sessionId: E, goalSeconds: 3600, reportingTimeZone: ZONE }), session: { ...d, id: E, breaks: [], locations: [], revisions: [], revision: 1 }, sessionId: E, expected: 0 },
   ];
 
@@ -131,7 +149,7 @@ export function shiftFixture() {
   };
 
   return {
-    sql: { steps, cases, profile, peerProjectId, A, C },
+    sql: { steps, cases, profile, peerProjectId, A, B, C, I, fixX: fixX.id, fixY: fixY.id },
     expectedState: state,
     expectedProfile: profile,
   };
