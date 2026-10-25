@@ -8,6 +8,7 @@
 import { createContext, useContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
 import { IndexedDbPersistence, MemoryPersistence, requestPersistentStorage } from "./persistence";
+import { deriveRewards } from "./rewards";
 import { ShiftStore, type StoreDeps, type StoreView } from "./store";
 import { httpTransport } from "@/lib/sync/transport";
 
@@ -25,7 +26,7 @@ function createStore(extra?: Partial<StoreDeps>): ShiftStore {
   });
 }
 
-export function ShiftProvider({ children, derive }: { children: ReactNode; derive?: StoreDeps["derive"] }) {
+export function ShiftProvider({ children, derive = deriveRewards }: { children: ReactNode; derive?: StoreDeps["derive"] }) {
   const [store] = useState(() => (singleton ??= createStore({ derive })));
 
   useEffect(() => {

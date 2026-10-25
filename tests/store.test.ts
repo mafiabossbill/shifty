@@ -283,3 +283,22 @@ describe("G: offline, then sync", () => {
     expect(s.startedAt).toBe(clock.t + 10 * 60_000);
   });
 });
+
+describe("rewards wiring", () => {
+  it("completing a session appends ledger rows once, and replays add nothing", async () => {
+    const { deriveRewards } = await import("@/lib/store/rewards");
+    const clock = { t: Date.UTC(2026, 9, 26, 15) };
+    const store = new ShiftStore({ persistence: new MemoryPersistence(), transport: null, clock: () => clock.t, deviceTimeZone: () => DAR, derive: deriveRewards, undoMs: 5, locate: async () => ({ event: "clock_in", status: "off", requestedAt: 0, capturedAt: null, latitude: null, longitude: null, accuracyM: null, placeLabel: null }) });
+    await store.init();
+    await store.clockIn();
+    clock.t += 8 * H;
+    await store.clockOut();
+    await sleep(10);
+    const view = store.getSnapshot();
+    expect(view.profile.ledger.length).toBeGreaterThan(0);
+    expect(view.profile.achievements.map((a) => a.code)).toContain("first_clock_in");
+    const rows = view.profile.ledger.length;
+    await store.updateSettings({ clock: "12h" });
+    expect(store.getSnapshot().profile.ledger.length).toBe(rows);
+  });
+});
