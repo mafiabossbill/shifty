@@ -4,10 +4,14 @@ import { firstIssue, jsonError, readJson } from "@/lib/api";
 import { ACTIVE_ORG_COOKIE, apiSignedIn } from "@/lib/current-user";
 import { deletionImpact } from "@/lib/data/account";
 import { logEvent } from "@/lib/log";
+import { supabaseConfigured } from "@/lib/supabase/env";
 import { accountDeleteSchema } from "@/lib/validation";
+
+const NO_ACCOUNTS = "Accounts aren't set up on this deployment. Your data lives on this device: clear it from Settings → Data.";
 
 /** GET /api/account — what deleting the account would do, per workspace. */
 export async function GET() {
+  if (!supabaseConfigured()) return jsonError(503, NO_ACCOUNTS);
   const { user, supabase, response } = await apiSignedIn();
   if (!user) return response;
   return NextResponse.json({ data: await deletionImpact(supabase) });
@@ -18,6 +22,7 @@ export async function GET() {
  * email must match; refused while they're the last admin of a workspace others still use). Signs out.
  */
 export async function DELETE(request: Request) {
+  if (!supabaseConfigured()) return jsonError(503, NO_ACCOUNTS);
   const { user, supabase, response } = await apiSignedIn();
   if (!user) return response;
   const parsed = accountDeleteSchema.safeParse((await readJson(request)) ?? {});

@@ -51,6 +51,16 @@ const del = (body: unknown) => new Request("http://test", { method: "DELETE", bo
 describe("account self-service", () => {
   beforeEach(() => {
     Object.assign(state, { signedIn: true, rpcError: null, calls: [], signedOut: false });
+    // Placeholder project: the Supabase client is mocked, nothing is ever called.
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.test");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-test-key");
+  });
+
+  it("answers 503 on a deployment without accounts (device mode)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    expect((await exportData()).status).toBe(503);
+    expect((await impact()).status).toBe(503);
+    expect((await remove(del({ confirm_email: "x" }))).status).toBe(503);
   });
 
   it("needs a signed-in person", async () => {

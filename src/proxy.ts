@@ -2,11 +2,17 @@ import { createServerClient } from "@supabase/ssr";
 import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
-import { supabaseEnv } from "@/lib/supabase/env";
 import { isPublicPath } from "@/lib/public-paths";
+import { supabaseConfigured, supabaseEnv } from "@/lib/supabase/env";
 
-/** Refreshes the Supabase session cookie on every request and sends signed-out page requests to /login. */
+/**
+ * Refreshes the Supabase session cookie on every request when sync is configured.
+ * Device mode (no Supabase settings) passes everything through: the tracking pages are a public shell.
+ * Signed-out requests for the few pages that need an account (not in PUBLIC_PATHS) go to /login;
+ * /api/* routes answer 401 themselves.
+ */
 export async function proxy(request: NextRequest) {
+  if (!supabaseConfigured()) return NextResponse.next({ request });
   const { url, anonKey } = supabaseEnv();
   let response = NextResponse.next({ request });
 
@@ -40,12 +46,11 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(claims.data?.claims);
   const { pathname, search } = request.nextUrl;
 
-  // API routes answer 401 themselves; only pages redirect.
   if (!signedIn && !isPublicPath(pathname) && !pathname.startsWith("/api/")) {
     const login = request.nextUrl.clone();
     login.pathname = "/login";
     login.search = "";
-    if (pathname !== "/") login.searchParams.set("next", `${pathname}${search}`);
+    login.searchParams.set("next", `${pathname}${search}`);
     return withCookies(NextResponse.redirect(login), response);
   }
   return response;
