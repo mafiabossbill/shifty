@@ -6,9 +6,9 @@
 ## Snapshot
 | Field | Value |
 | --- | --- |
-| Phase | 11 — preview built; PR open for Bill; release blocked on SHIFTY's Supabase project |
+| Phase | 15 — merged to main (PR #7) and deployed to Vercel production; production unverified from the build session; release gate pending SHIFTY's Supabase project |
 | Blueprint | `factory/blueprint.json` (validated: yes — `validate-blueprints.mjs` PASS) |
-| Production URL | — (not released) |
+| Production URL | `https://shifty-topaz.vercel.app` (Vercel READY at 4c6dc5d; not verified: unreachable from the build session, Vercel Authentication on) |
 | Preview URL | `https://shifty-git-claude-relaxed-davinci-y8k5u9-zigo-s-projects1.vercel.app` (Vercel READY; not reachable from the build session's network; Vercel Authentication on) |
 | Supabase project | dev: — · prod: — (SHIFTY has none yet; the environment's keys belong to pasuax-executive-matrix and are never used) |
 | Vercel project | `shifty` (`prj_pq5psWEVX24SyIBloA0ISQTrEPKP`), region dub1, linked to GitHub |
@@ -55,6 +55,7 @@ Not chosen: integration-engineer (no third-party APIs in phase 1), devops-engine
 
 ## Log
 <!-- newest first -->
+- 2026-10-25 orchestrator — PR #7 merged on Bill's request (D11); Vercel production deployment READY (4c6dc5d); `scripts/release verify` not run (host unreachable from here, no Supabase).
 - 2026-10-25 orchestrator — QA findings fixed (day-split rounding, multi-tab reload, touch targets, h1, plurals); full gate + 137 e2e green; PR opened.
 - 2026-10-25 orchestrator — all lanes merged; security fixes merged (0105, redirect, device wipe, privacy copy); QA started.
 - 2026-10-25 orchestrator — engine, reducer, store, reports, export, demo; lanes ux/mochi/db/rewards/sync/pwa/home/sessions/insights/companion run in parallel worktrees.

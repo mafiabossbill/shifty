@@ -13,6 +13,11 @@ Consequences: <cost, follow-ups, how to revisit>
 ```
 
 ## Entries
+### D11 — Agent merged PR #7 on Bill's explicit request (2026-10-25, Bill)
+Context: doctrine §24 says Bill merges and agents never merge to `main`; Bill asked in the build session: "Merge asap".
+Decision: the orchestrator merged mafiabossbill/shifty#7 (merge commit 4c6dc5d) after confirming CI green (check, database) and a clean merge state on head 8e95729.
+Consequences: one-off approval for this PR only; later PRs go back to Bill merging unless he says otherwise.
+
 ### D10 — No audit_logs triggers on SHIFTY tables (2026-10-25, database-engineer)
 Context: org admins can read `audit_logs`; shift data is private to its owner.
 Decision: history lives in owner-only `shift_events` (append-only) and `session_revisions`; no generic audit trigger on tracking tables. Cross-session overlap is a domain rule (explicit override allowed), not a DB constraint.
