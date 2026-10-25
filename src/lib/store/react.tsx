@@ -10,13 +10,25 @@ import { createContext, useContext, useEffect, useState, useSyncExternalStore, t
 import { IndexedDbPersistence, MemoryPersistence, requestPersistentStorage } from "./persistence";
 import { deriveRewards } from "./rewards";
 import { ShiftStore, type StoreDeps, type StoreView } from "./store";
+import { buildDemo, demoRequested } from "@/lib/demo/seed";
 import { httpTransport } from "@/lib/sync/transport";
+import { deviceTimeZone } from "@/lib/time/zone";
 
 const StoreContext = createContext<ShiftStore | null>(null);
 
 let singleton: ShiftStore | null = null;
 
+function createDemoStore(extra?: Partial<StoreDeps>): ShiftStore {
+  const persistence = new MemoryPersistence();
+  const zone = deviceTimeZone();
+  const demo = buildDemo(Date.now(), zone);
+  demo.events.forEach((event, i) => persistence.events.set(event.id, { event, seq: i + 1, status: "local", holdUntil: null, error: null, attempts: 0 }));
+  persistence.profile = demo.profile;
+  return new ShiftStore({ persistence, transport: null, demo: true, ...extra });
+}
+
 function createStore(extra?: Partial<StoreDeps>): ShiftStore {
+  if (demoRequested()) return createDemoStore(extra);
   const hasIdb = typeof indexedDB !== "undefined";
   return new ShiftStore({
     persistence: hasIdb ? new IndexedDbPersistence() : new MemoryPersistence(),

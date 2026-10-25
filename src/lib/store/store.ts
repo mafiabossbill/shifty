@@ -81,6 +81,8 @@ export interface StoreView {
   dismissedNudges: ReadonlySet<string>;
   /** The clock-out that can still be undone. */
   undo: { eventId: string; sessionId: string; until: number } | null;
+  /** Demo history in memory only (`?demo=1`): nothing is saved or synced. */
+  demo: boolean;
 }
 
 export class ShiftActionError extends Error {
@@ -99,6 +101,7 @@ export interface StoreDeps {
   online?: () => boolean;
   /** Undo window after clock-out (A08). */
   undoMs?: number;
+  demo?: boolean;
   /** Turns the view into reward ledger rows / achievements to append (wired to src/lib/rewards). */
   derive?: (view: StoreView, now: number) => { ledger: LedgerEntry[]; achievements: EarnedAchievement[]; highestLevel: number } | null;
 }
@@ -276,6 +279,7 @@ export class ShiftStore {
       serverOffsetMs: this.meta.serverOffsetMs,
       dismissedNudges: new Set(this.meta.dismissedNudges),
       undo: this.undo,
+      demo: this.deps.demo ?? false,
     };
   }
 
