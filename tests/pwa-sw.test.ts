@@ -134,14 +134,14 @@ describe("service worker: install and activate", () => {
     });
     await sw.dispatch("install");
 
-    const shell = await sw.caches.open("shifty-shell-v1");
+    const shell = await sw.caches.open("shifty-shell-v2");
     for (const route of ["/", "/sessions", "/sessions/view", "/settings/account", "/offline.html", "/manifest.webmanifest", "/icons/icon-192.png"]) {
       expect(shell.has(route), route).toBe(true);
     }
     expect(shell.has("/sessions/trash")).toBe(false);
     expect(shell.has("/companion")).toBe(false);
 
-    const statics = await sw.caches.open("shifty-static-v1");
+    const statics = await sw.caches.open("shifty-static-v2");
     expect(statics.has("/_next/static/chunks/app-_sessions_view.js")).toBe(true);
 
     // Shell HTML is fetched without cookies, so a signed-in render is never stored.
@@ -158,16 +158,16 @@ describe("service worker: install and activate", () => {
       fetch: async (input) => (requestUrl(input).pathname === "/settings" ? basic("login", { redirected: true }) : basic("<html></html>")),
     });
     await sw.dispatch("install");
-    const shell = await sw.caches.open("shifty-shell-v1");
+    const shell = await sw.caches.open("shifty-shell-v2");
     expect(shell.has("/settings")).toBe(false);
     expect(shell.has("/")).toBe(true);
   });
 
   it("activate deletes old versioned caches, keeps current and foreign ones, claims clients", async () => {
     const sw = loadWorker();
-    for (const name of ["shifty-shell-v0", "shifty-static-v0", "app-offline-v1", "shifty-shell-v1", "shifty-static-v1", "someone-else"]) await sw.caches.open(name);
+    for (const name of ["shifty-shell-v1", "shifty-static-v1", "app-offline-v1", "shifty-shell-v2", "shifty-static-v2", "someone-else"]) await sw.caches.open(name);
     await sw.dispatch("activate");
-    expect((await sw.caches.keys()).sort()).toEqual(["shifty-shell-v1", "shifty-static-v1", "someone-else"]);
+    expect((await sw.caches.keys()).sort()).toEqual(["shifty-shell-v2", "shifty-static-v2", "someone-else"]);
     expect(sw.self.clients.claim).toHaveBeenCalled();
   });
 
@@ -240,7 +240,7 @@ describe("service worker: navigations", () => {
     const sw = await installed(async () => {
       throw new TypeError("offline");
     });
-    (await sw.caches.open("shifty-shell-v1")).delete("/companion");
+    (await sw.caches.open("shifty-shell-v2")).delete("/companion");
     const { response } = await sw.fetchEvent("/companion", { mode: "navigate" });
     expect(await response!.text()).toBe("cached /offline.html");
   });
@@ -256,10 +256,10 @@ describe("service worker: navigations", () => {
     let impl: FetchImpl = async (input) => basic(`v${version} ${requestUrl(input).pathname}`);
     const sw = loadWorker({ fetch: (input, init) => impl(input, init) });
     await sw.dispatch("install");
-    const shell = await sw.caches.open("shifty-shell-v1");
+    const shell = await sw.caches.open("shifty-shell-v2");
     // Pretend the stored copy is older than the refresh throttle by reloading the worker state.
     const fresh = loadWorker({ fetch: (input, init) => impl(input, init) });
-    fresh.caches.stores.set("shifty-shell-v1", shell);
+    fresh.caches.stores.set("shifty-shell-v2", shell);
     version = 2;
     impl = async (input) => basic(`v${version} ${requestUrl(input).pathname}${requestUrl(input).search}`);
 
@@ -289,7 +289,7 @@ describe("service worker: static assets", () => {
     const sw = loadWorker({ fetch: async () => basic("missing", { status: 404 }) });
     const { response } = await sw.fetchEvent("/_next/static/chunks/gone.js");
     expect(response!.status).toBe(404);
-    expect((await sw.caches.open("shifty-static-v1")).has("/_next/static/chunks/gone.js")).toBe(false);
+    expect((await sw.caches.open("shifty-static-v2")).has("/_next/static/chunks/gone.js")).toBe(false);
   });
 
   it("serves icons from the shell cache when offline", async () => {
