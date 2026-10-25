@@ -6,12 +6,12 @@ import { FlaskConicalIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { exitDemo } from "@/lib/demo/seed";
-import { useReadyShift } from "./use-ready-shift";
+import { useShift } from "@/lib/store/react";
 
 
 /** "Try demo data" (ten weeks, in memory only) or, in demo, "Exit demo". */
 export function DemoLink({ compact = false }: { compact?: boolean }) {
-  const view = useReadyShift();
+  const view = useShift();
   // view.demo is known on the client before the store is ready; wait so the server HTML matches.
   if (!view.ready) return <Skeleton className={compact ? "h-9 w-32" : "h-20 w-full"} />;
   if (view.demo) {

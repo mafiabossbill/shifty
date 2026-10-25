@@ -10,12 +10,12 @@ import { formatMinor, fromMinor, toMinor } from "@/lib/money";
 
 
 import { SettingRow, SettingsGroup, SettingsHeader, SettingsSkeleton, useSaveSettings } from "./parts";
-import { useReadyShift } from "./use-ready-shift";
+import { useShift } from "@/lib/store/react";
 
 const CURRENCIES = ["TZS", "KES", "UGX", "RWF", "ZAR", "NGN", "USD", "EUR", "GBP", "AED", "INR"];
 
 export function PaySettings() {
-  const view = useReadyShift();
+  const view = useShift();
   const save = useSaveSettings();
   if (!view.ready) return <SettingsSkeleton rows={3} />;
   const s = view.profile.settings;

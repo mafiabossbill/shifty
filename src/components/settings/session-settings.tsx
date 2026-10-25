@@ -10,12 +10,11 @@ import { SwitchRow } from "@/components/ui/switch";
 import { parseGoal, splitGoal } from "@/lib/settings/goal";
 import { notificationSupport, requestNotifications } from "@/lib/notify";
 import { REMINDER_HOURS } from "@/lib/shifts/profile";
-import { useNow } from "@/lib/store/react";
+import { useNow, useShift } from "@/lib/store/react";
 
 
 import { SettingRow, SettingsGroup, SettingsHeader, SettingsSkeleton, ToggleChip, useSaveSettings } from "./parts";
 import { TimezonePicker } from "./timezone-picker";
-import { useReadyShift } from "./use-ready-shift";
 
 const WEEKDAYS = [
   { day: 1, short: "Mon", long: "Monday" },
@@ -38,7 +37,7 @@ const NUDGE_OPTIONS = [
 ];
 
 export function SessionSettings({ showHeader = true }: { showHeader?: boolean }) {
-  const view = useReadyShift();
+  const view = useShift();
   const now = useNow(60_000);
   const save = useSaveSettings();
   if (!view.ready) return <SettingsSkeleton rows={8} />;

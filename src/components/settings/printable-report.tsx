@@ -9,9 +9,8 @@ import { formatDate, formatDuration, formatMonth, formatTime } from "@/lib/forma
 import { sessionFacts } from "@/lib/reports";
 import { sessionLabel } from "@/lib/settings/locations";
 import { monthReport, reportMonths } from "@/lib/settings/report";
-import { useNow } from "@/lib/store/react";
+import { useNow, useShift } from "@/lib/store/react";
 import { localDateOf } from "@/lib/time/zone";
-import { useReadyShift } from "./use-ready-shift";
 
 /*
  * Print stylesheet scoped to this report: while printing, everything that is neither the report nor one of
@@ -33,7 +32,7 @@ const PRINT_CSS = `
 }`;
 
 export function PrintableReport() {
-  const view = useReadyShift();
+  const view = useShift();
   const now = useNow(60_000);
   const s = view.profile.settings;
   const today = localDateOf(now, s.reportingTimeZone);

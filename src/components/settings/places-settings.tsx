@@ -16,10 +16,9 @@ import { distanceM } from "@/lib/geo/places";
 import { locationPoints, type LocationPoint } from "@/lib/settings/locations";
 import type { Place } from "@/lib/shifts/profile";
 import { newUuid } from "@/lib/store/store";
-import { useShiftStore } from "@/lib/store/react";
+import { useShift, useShiftStore } from "@/lib/store/react";
 
 import { SettingsGroup, SettingsHeader, SettingsSkeleton } from "./parts";
-import { useReadyShift } from "./use-ready-shift";
 
 const RADII = [50, 100, 200, 500, 1000];
 const radiusLabel = (m: number) => (m >= 1000 ? `${m / 1000} km` : `${m} m`);
@@ -32,7 +31,7 @@ interface Draft {
 }
 
 export function PlacesSettings() {
-  const view = useReadyShift();
+  const view = useShift();
   const store = useShiftStore();
   const confirm = useConfirm();
   const [draft, setDraft] = React.useState<Draft | null>(null);

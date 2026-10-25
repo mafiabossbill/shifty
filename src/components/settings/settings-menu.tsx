@@ -13,7 +13,7 @@ import type { StoreView } from "@/lib/store/store";
 import { DemoLink } from "./demo-link";
 import { SETTINGS_GROUPS, type SettingsIcon as IconName } from "./nav";
 import { SettingsIcon } from "./settings-icon";
-import { useReadyShift } from "./use-ready-shift";
+import { useShift } from "@/lib/store/react";
 
 function summary(icon: IconName, view: StoreView): string {
   const s = view.profile.settings;
@@ -39,7 +39,7 @@ function summary(icon: IconName, view: StoreView): string {
 
 /** The /settings index on phones and tablets: grouped rows that open each page. */
 export function SettingsMenu() {
-  const view = useReadyShift();
+  const view = useShift();
   return (
     <div className="grid gap-6">
       {SETTINGS_GROUPS.map((group) => (

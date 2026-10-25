@@ -14,10 +14,9 @@ import { signOut } from "@/lib/auth-actions";
 import { formatInstant } from "@/lib/format";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import type { StoreView } from "@/lib/store/store";
-import { useShiftStore } from "@/lib/store/react";
+import { useShift, useShiftStore } from "@/lib/store/react";
 
 import { SettingsGroup, SettingsHeader, SettingsSkeleton } from "./parts";
-import { useReadyShift } from "./use-ready-shift";
 
 type Persisted = "persisted" | "best-effort" | "unknown";
 
@@ -44,7 +43,7 @@ function usePersistedStorage(): Persisted | null {
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export function AccountSettings() {
-  const view = useReadyShift();
+  const view = useShift();
   const store = useShiftStore();
   const confirm = useConfirm();
   const persisted = usePersistedStorage();

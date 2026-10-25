@@ -7,10 +7,9 @@ import { moodFor, type MochiStatus } from "@/components/mochi/mood";
 import { ACHIEVEMENTS } from "@/lib/rewards";
 import { equippedLook } from "@/lib/settings/companion";
 import { rewardsFor } from "@/lib/store/rewards";
-import { useNow } from "@/lib/store/react";
+import { useNow, useShift } from "@/lib/store/react";
 import { sessionMetrics } from "@/lib/time/allocate";
 import { localDateOf, wallClock } from "@/lib/time/zone";
-import { useReadyShift } from "@/components/settings/use-ready-shift";
 
 const JUST_FINISHED_MS = 30 * 60_000;
 const NAMES = new Map<string, string>(ACHIEVEMENTS.map((a) => [a.code, a.name]));
@@ -18,7 +17,7 @@ export const achievementName = (code: string) => NAMES.get(code);
 
 /** Everything the Companion screen derives from the store, recomputed once a minute or on change. */
 export function useCompanion() {
-  const view = useReadyShift();
+  const view = useShift();
   const now = useNow(60_000);
   const rewards = React.useMemo(() => (view.ready ? rewardsFor(view.state, view.profile, now) : null), [view.ready, view.state, view.profile, now]);
   const settings = view.profile.settings;

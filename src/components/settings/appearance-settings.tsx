@@ -9,10 +9,10 @@ import { SwitchRow } from "@/components/ui/switch";
 
 
 import { SettingRow, SettingsGroup, SettingsHeader, SettingsSkeleton, useSaveSettings } from "./parts";
-import { useReadyShift } from "./use-ready-shift";
+import { useShift } from "@/lib/store/react";
 
 export function AppearanceSettings() {
-  const view = useReadyShift();
+  const view = useShift();
   const save = useSaveSettings();
   const { motion, setMotion } = useTheme();
   if (!view.ready) return <SettingsSkeleton rows={5} />;

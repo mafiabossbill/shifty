@@ -12,12 +12,11 @@ import { sessionLabel } from "@/lib/settings/locations";
 import { exportFileName, importEventFor, planSentence, type ExportKind } from "@/lib/settings/data";
 import type { ShiftEvent } from "@/lib/shifts/types";
 import { newUuid, ShiftActionError } from "@/lib/store/store";
-import { useShiftStore } from "@/lib/store/react";
+import { useShift, useShiftStore } from "@/lib/store/react";
 import { deviceTimeZone, localDateOf } from "@/lib/time/zone";
 
 import { SettingsGroup, SettingsHeader, SettingsSkeleton } from "./parts";
 import { PrintableReport } from "./printable-report";
-import { useReadyShift } from "./use-ready-shift";
 
 function download(name: string, type: string, text: string) {
   const blob = new Blob([text], { type });
@@ -32,7 +31,7 @@ function download(name: string, type: string, text: string) {
 }
 
 export function DataSettings() {
-  const view = useReadyShift();
+  const view = useShift();
   const store = useShiftStore();
   const [redact, setRedact] = React.useState(false);
   const [plan, setPlan] = React.useState<{ plan: ImportPlan; events: Map<string, ShiftEvent>; file: string } | null>(null);

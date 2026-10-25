@@ -12,16 +12,15 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { SwitchRow } from "@/components/ui/switch";
 import { formatDate, formatTime, zoneAbbreviation } from "@/lib/format";
 import { EVENT_WORDS, RETENTION_OPTIONS, locationPoints, pointsOlderThan, retentionValue } from "@/lib/settings/locations";
-import { useNow, useShiftStore } from "@/lib/store/react";
+import { useNow, useShift, useShiftStore } from "@/lib/store/react";
 import { deviceTimeZone, localDateOf } from "@/lib/time/zone";
 
 import { SettingsGroup, SettingsHeader, SettingsSkeleton, useSaveSettings } from "./parts";
-import { useReadyShift } from "./use-ready-shift";
 
 const PAGE = 50;
 
 export function PrivacySettings() {
-  const view = useReadyShift();
+  const view = useShift();
   const store = useShiftStore();
   const confirm = useConfirm();
   const save = useSaveSettings();
