@@ -12,7 +12,7 @@ import { pushEvents } from "../_lib/push";
  * itself was readable, because per-event outcomes live in the results.
  */
 export async function POST(request: Request) {
-  const { session, repo, response } = await syncSession();
+  const { session, repo, response } = await syncSession(request);
   if (!session) return response;
   const parsed = syncPushSchema.safeParse(await readJson(request));
   if (!parsed.success) return syncError(400, firstIssue(parsed.error));

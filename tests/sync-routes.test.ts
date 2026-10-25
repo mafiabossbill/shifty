@@ -9,6 +9,7 @@ import { defaultCompanion, defaultSettings } from "@/lib/shifts/profile";
 import { applyEvent } from "@/lib/shifts/reducer";
 import { EMPTY_STATE, type ShiftEvent, type ShiftSession } from "@/lib/shifts/types";
 import { CLOCK_AHEAD_TOLERANCE_MS, MAX_PUSH_BATCH, type PushResult } from "@/lib/sync/contract";
+import { MAX_RELOADS_PER_BATCH, TOO_MANY_CONFLICTS } from "@/app/api/sync/_lib/push";
 
 const mocks = vi.hoisted(() => ({
   session: null as null | { session?: unknown; response?: Response },
@@ -68,14 +69,15 @@ const breakEnd = (sessionId: string, breakId: string, at: number): ShiftEvent =>
 const clockOut = (sessionId: string, at: number): ShiftEvent => ({ ...base(at), type: "clock_out", sessionId });
 const simple = (type: "delete" | "restore" | "purge", sessionId: string, at: number): ShiftEvent => ({ ...base(at), type, sessionId });
 
-const push = async (events: unknown[]) => pushRoute(new Request("http://test/api/sync/events", { method: "POST", body: JSON.stringify({ events }) }));
+const JSON_HEADERS = { "content-type": "application/json" };
+const push = async (events: unknown[]) => pushRoute(new Request("http://test/api/sync/events", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ events }) }));
 async function pushOk(events: unknown[]): Promise<PushResult[]> {
   const res = await push(events);
   expect(res.status).toBe(200);
   expect(res.headers.get("cache-control")).toBe("no-store");
   return (await res.json()).data.results;
 }
-const put = (body: unknown) => putProfile(new Request("http://test/api/sync/profile", { method: "PUT", body: JSON.stringify(body) }));
+const put = (body: unknown) => putProfile(new Request("http://test/api/sync/profile", { method: "PUT", headers: JSON_HEADERS, body: JSON.stringify(body) }));
 
 /** A completed session already on the server (as if synced earlier). */
 function seededSession(start: number, end: number): ShiftSession {
@@ -152,6 +154,62 @@ describe("sync access", () => {
   });
 });
 
+describe("cross-site and content-type walls (POST/PUT)", () => {
+  const send = (route: typeof pushRoute, method: string, headers: Record<string, string>, body: unknown) =>
+    route(new Request("http://test", { method, headers, body: JSON.stringify(body) }));
+  const event = () => clockIn(randomUUID(), Date.now() - HOUR);
+
+  it("refuses a request a browser marks as cross-site, before anything else", async () => {
+    signInAs("member");
+    for (const [route, method, body] of [
+      [pushRoute, "POST", { events: [event()] }],
+      [putProfile, "PUT", { settings: defaultSettings(ZONE, 1) }],
+    ] as const) {
+      const res = await send(route, method, { ...JSON_HEADERS, "sec-fetch-site": "cross-site" }, body);
+      expect(res.status).toBe(403);
+      expect(res.headers.get("cache-control")).toBe("no-store");
+      expect((await res.json()).error).toBe("This request came from another site, so it was refused.");
+    }
+    // Even signed out or unconfigured, a cross-site write learns nothing else.
+    mocks.session = null;
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    expect((await send(pushRoute, "POST", { ...JSON_HEADERS, "sec-fetch-site": "cross-site" }, { events: [event()] })).status).toBe(403);
+  });
+
+  it("lets same-origin, same-site, none and a missing Sec-Fetch-Site through", async () => {
+    signInAs("member");
+    for (const site of ["same-origin", "same-site", "none", undefined]) {
+      const headers: Record<string, string> = { ...JSON_HEADERS, ...(site ? { "sec-fetch-site": site } : {}) };
+      expect((await send(pushRoute, "POST", headers, { events: [event()] })).status, String(site)).toBe(200);
+      expect((await send(putProfile, "PUT", headers, { settings: defaultSettings(ZONE, 1) })).status, String(site)).toBe(200);
+    }
+  });
+
+  it("answers 415 unless the body is declared JSON", async () => {
+    signInAs("member");
+    for (const headers of [{} as Record<string, string>, { "content-type": "text/plain;charset=UTF-8" }, { "content-type": "application/x-www-form-urlencoded" }, { "content-type": "multipart/form-data; boundary=x" }]) {
+      for (const [route, method] of [
+        [pushRoute, "POST"],
+        [putProfile, "PUT"],
+      ] as const) {
+        // A string body gets text/plain unless a type is given; strip it for the "no header" case.
+        const request = new Request("http://test", { method, headers, body: JSON.stringify({ events: [event()] }) });
+        if (!("content-type" in headers)) request.headers.delete("content-type");
+        const res = await route(request);
+        expect(res.status, JSON.stringify(headers)).toBe(415);
+        expect((await res.json()).error).toBe("Send the body as JSON (Content-Type: application/json).");
+      }
+    }
+    expect((await send(pushRoute, "POST", { "content-type": "application/json; charset=utf-8" }, { events: [event()] })).status).toBe(200);
+    expect((await send(pushRoute, "POST", { "content-type": "Application/JSON" }, { events: [event()] })).status).toBe(200);
+  });
+
+  it("leaves reads alone", async () => {
+    signInAs("member");
+    expect((await getState()).status).toBe(200);
+  });
+});
+
 describe("POST /api/sync/events", () => {
   it("validates the batch itself", async () => {
     signInAs("member");
@@ -160,10 +218,10 @@ describe("POST /api/sync/events", () => {
     const res = await push(tooMany);
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe(`Send at most ${MAX_PUSH_BATCH} events at a time.`);
-    const extra = await pushRoute(new Request("http://test", { method: "POST", body: JSON.stringify({ events: [clockIn(randomUUID(), Date.now())], user_id: "x" }) }));
+    const extra = await pushRoute(new Request("http://test", { method: "POST", headers: JSON_HEADERS, body: JSON.stringify({ events: [clockIn(randomUUID(), Date.now())], user_id: "x" }) }));
     expect(extra.status).toBe(400);
     expect((await extra.json()).error).toBe("Unknown field: user_id.");
-    const broken = await pushRoute(new Request("http://test", { method: "POST", body: "{not json" }));
+    const broken = await pushRoute(new Request("http://test", { method: "POST", headers: JSON_HEADERS, body: "{not json" }));
     expect(broken.status).toBe(400);
   });
 
@@ -256,6 +314,36 @@ describe("POST /api/sync/events", () => {
     const [result] = await pushOk([{ ...base(Date.now()), type: "annotate", sessionId: seeded.id, changes: { mood: 2 } }]);
     expect(result).toMatchObject({ status: "rejected", code: "server" });
     expect(repo.sessions.get(seeded.id)).toEqual(seeded);
+  });
+
+  it("caps state reloads per batch; the rest waits on the device for the next sync", async () => {
+    const seeded = seededSession(Date.now() - 30 * HOUR, Date.now() - 20 * HOUR);
+    const repo = signInAs("member", new InMemoryShiftRepository([seeded]));
+    let loads = 0;
+    const load = repo.loadSessions.bind(repo);
+    repo.loadSessions = async () => {
+      loads += 1;
+      return load();
+    };
+    repo.failNext.push(...Array.from({ length: 50 }, () => ({ status: "revision_conflict" as const })));
+    const annotate = (mood: number): ShiftEvent => ({ ...base(Date.now()), type: "annotate", sessionId: seeded.id, changes: { mood } });
+    const events = [annotate(1), annotate(2), annotate(3), annotate(4)];
+    const results = await pushOk(events);
+    expect(results.map((r) => r.id)).toEqual(events.map((e) => e.id));
+    expect(results.every((r) => r.status === "rejected" && r.code === "server")).toBe(true);
+    // The first event spends its own retries; the second hits the cap; the rest aren't tried.
+    expect(results.map((r) => (r.status === "rejected" ? r.message : ""))).toEqual([
+      "Another device changed this session at the same moment. Sync again to retry.",
+      TOO_MANY_CONFLICTS,
+      TOO_MANY_CONFLICTS,
+      TOO_MANY_CONFLICTS,
+    ]);
+    expect(loads).toBe(1 + MAX_RELOADS_PER_BATCH);
+    expect(repo.sessions.get(seeded.id)).toEqual(seeded);
+
+    // Next sync, no conflicts: every event goes through.
+    repo.failNext.length = 0;
+    expect((await pushOk(events)).map((r) => r.status)).toEqual(["applied", "applied", "applied", "applied"]);
   });
 
   it("an invalid event doesn't block the others", async () => {

@@ -9,10 +9,15 @@ import { CLOCK_AHEAD_TOLERANCE_MS, type PushResult } from "@/lib/sync/contract";
 
 /** Attempts per event when another device commits the same session in between (SQLSTATE 40001). */
 export const MAX_COMMIT_ATTEMPTS = 1 + 3;
+/** State reloads one batch may cause (conflicts, races). Past this, the rest of the batch waits for the next sync. */
+export const MAX_RELOADS_PER_BATCH = 5;
 
 const SERVER_FAILED = "The server couldn't save this change. It's kept on this device; sync again in a moment.";
 const RACED = "Another device changed this session at the same moment. Sync again to retry.";
 const FORBIDDEN = "Your account can't track shifts in this workspace.";
+export const TOO_MANY_CONFLICTS = "Too many conflicts in one sync, try again.";
+
+class ReloadBudgetExhausted extends Error {}
 
 function toState(sessions: ShiftSession[]): ShiftState {
   return { sessions: Object.fromEntries(sessions.map((s) => [s.id, s])) };
@@ -35,7 +40,7 @@ function withFlags(session: ShiftSession | null, flags: SessionFlag[]): ShiftSes
 
 export interface PushSummary {
   results: PushResult[];
-  counts: { applied: number; duplicate: number; rejected: number; retries: number };
+  counts: { applied: number; duplicate: number; rejected: number; retries: number; reloads: number };
 }
 
 /**
@@ -43,16 +48,20 @@ export interface PushSummary {
  * (a rejection is reported with its code), then the result is committed atomically with the revision we
  * loaded. A concurrent commit (revision_conflict) reloads the state and re-runs the reducer. The local
  * state follows every success so later events in the batch see it. Never throws for one bad event.
+ * A batch may reload the state at most MAX_RELOADS_PER_BATCH times; once spent, the event that needed
+ * another reload and every later one are rejected "server" (kept on the device, retried next sync).
  */
 export async function pushEvents(repo: ShiftRepository, raws: readonly unknown[], now: number, userId: string): Promise<PushSummary> {
   const parsed = raws.map((raw) => parseShiftEvent(raw));
   const ids = parsed.flatMap((p) => (p.ok ? [p.event.id] : []));
   const committed = await repo.committedEventIds(ids);
   let state = toState(await repo.loadSessions());
-  const counts = { applied: 0, duplicate: 0, rejected: 0, retries: 0 };
+  const counts = { applied: 0, duplicate: 0, rejected: 0, retries: 0, reloads: 0 };
   const results: PushResult[] = [];
 
   const reload = async () => {
+    if (counts.reloads >= MAX_RELOADS_PER_BATCH) throw new ReloadBudgetExhausted();
+    counts.reloads += 1;
     state = toState(await repo.loadSessions());
   };
 
@@ -116,16 +125,25 @@ export async function pushEvents(repo: ShiftRepository, raws: readonly unknown[]
     return { id, status: "rejected", code: "server", message: RACED };
   };
 
+  let exhausted = false;
   for (const [index, p] of parsed.entries()) {
     let result: PushResult;
-    if (!p.ok) {
+    if (exhausted) {
+      result = { id: p.ok ? p.event.id : rawId(raws[index], index), status: "rejected", code: "server", message: TOO_MANY_CONFLICTS };
+    } else if (!p.ok) {
       result = { id: rawId(raws[index], index), status: "rejected", code: "validation", message: p.message };
     } else {
       try {
         result = await pushOne(p.event);
       } catch (error) {
-        logEvent("error", "sync.commit_threw", { user_id: userId, event_id: p.event.id, type: p.event.type, message: (error as Error).message.slice(0, 200) });
-        result = { id: p.event.id, status: "rejected", code: "server", message: SERVER_FAILED };
+        if (error instanceof ReloadBudgetExhausted) {
+          exhausted = true;
+          logEvent("warn", "sync.reload_budget_spent", { user_id: userId, event_id: p.event.id, remaining: raws.length - index });
+          result = { id: p.event.id, status: "rejected", code: "server", message: TOO_MANY_CONFLICTS };
+        } else {
+          logEvent("error", "sync.commit_threw", { user_id: userId, event_id: p.event.id, type: p.event.type, message: (error as Error).message.slice(0, 200) });
+          result = { id: p.event.id, status: "rejected", code: "server", message: SERVER_FAILED };
+        }
       }
     }
     counts[result.status] += 1;

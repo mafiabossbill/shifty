@@ -3,6 +3,7 @@
  * Lives on the device (IndexedDB) and, when signed in, in Supabase (last write wins per document — none of
  * it is time accounting). Sessions never live here.
  */
+import "@/lib/zod-setup";
 import { z } from "zod";
 
 import { isValidTimeZone } from "@/lib/time/zone";

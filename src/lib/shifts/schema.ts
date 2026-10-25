@@ -1,4 +1,5 @@
 /** Zod schemas for every event that crosses a boundary (device → server, import files). */
+import "@/lib/zod-setup";
 import { z } from "zod";
 
 import { isValidTimeZone } from "@/lib/time/zone";
