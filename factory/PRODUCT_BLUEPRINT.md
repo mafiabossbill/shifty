@@ -54,7 +54,7 @@ Account deletion (`delete_own_account()`) removes every row below for that user.
 | R06 | Sync is idempotent and never silently overwrites: a replayed event id returns the original result; a correction based on a stale revision is 409 with the server state and stays on the device as Needs attention; events for a purged session are ignored | database, api, ui | unique `shift_events (id)`; route tests: replay = 200 same result, stale base_revision = 409, replay after purge does not resurrect; e2e offline replay |
 | R07 | A person sees and changes only their own tracking rows (admins included) | database | `scripts/check-rls.ts`: second member and admin see 0 rows of the first member on every tracking table; outsider sees nothing |
 | R08 | XP never grows with hours worked; per-session and per-day caps; the ledger is a deterministic, idempotent function of history; corrections write reversal rows; unlocked items and levels are never taken away | database, api | unique `(user_id, event_key)`; reward engine tests: 8 h and 20 h sessions earn the same completion XP; recompute twice = no new rows; correction → reversal row; level never decreases |
-| R09 | One person's sessions never overlap in time (trash excluded); manual entry, import and corrections that would overlap are refused naming the other session | database, api, ui | exclusion constraint on `(user_id, tstzrange(started_at, coalesce(ended_at, 'infinity')))` where `deleted_at is null` (deferrable, checked at commit); route test 409 |
+| R09 | No unintentional overlap: clock-in, manual entry, import, restore and corrections that would overlap another session are refused naming it, unless the person explicitly confirms the overlap (allowOverlap) | database, api, ui | reducer findOverlap (shared device + server); reducer and route tests 409 |
 | R10 | Deleting a location fix removes its coordinates everywhere: the snapshot row is hard-deleted and the originating event's payload is redacted (the only permitted change to an event); exports afterwards contain none | database, api, ui | DB test: after `location_deleted`, no row and no coordinates in `shift_events.payload`; device log redacted; export test |
 
 ## 4. Flows and screens
@@ -144,12 +144,12 @@ A01–A09 from [BRIEF.md](BRIEF.md) are carried unchanged. Added by the product-
 
 | Id | Assumption | Impact | Needs Bill |
 | --- | --- | --- | --- |
-| A10 | One person's sessions never overlap (R09); overlapping manual entries, imports and corrections are refused | medium | no |
+| A10 | Overlaps are refused unless explicitly confirmed (R09) | medium | no |
 | A11 | Safety limit off by default; when on (default 20 h), the session ends at start + limit, labelled "Ended by safety limit"; applied deterministically by whichever device or server sees it first (derived event id) | medium | no |
 | A12 | Location retention default 90 days (choices 30 / 90 / 365 / keep); applied on app open and sync, hard delete + redaction (R10) | medium | no |
 | A13 | Signing in from device mode offers to upload this device's sessions; nothing uploads without a tap | medium | no |
 | A14 | Sign-out warns with the unsynced count, then clears device data | medium | no |
-| A15 | Events with `occurred_at` more than 10 min ahead of server time are refused ("Check your device clock") | low | no |
+| A15 | Events dated more than 2 min ahead of server time are accepted but flagged device_clock_ahead and shown ("Check your device clock"); never silently edited | low | no |
 | A16 | Earnings = round half-up(net_ms × hourly_rate_minor / 3,600,000) in the session's currency; no overtime rules | low | no |
 | A17 | Import accepts SHIFTY JSON (lossless) and CSV (start, end, breaks, timezone, note, project, tags); imported rows labelled Import | low | no |
 | A18 | Phase 3 iOS Live Activities = written spec only (renewal strategy for ~8 h limit); not built | low | no |
@@ -470,9 +470,9 @@ Question for Bill (credential only, A01): create SHIFTY's own Supabase project a
     },
     {
       "id": "R09",
-      "rule": "One person's sessions never overlap in time (trash excluded); manual entries, imports and corrections that would overlap are refused naming the other session",
-      "enforcedIn": ["database", "api", "ui"],
-      "test": "deferrable exclusion constraint on (user_id, tstzrange(started_at, coalesce(ended_at, infinity))) where deleted_at is null; route test 409"
+      "rule": "No unintentional overlap: clock-in, manual entry, import, restore and corrections that would overlap another session are refused naming it unless the person explicitly confirms",
+      "enforcedIn": ["api", "ui"],
+      "test": "reducer findOverlap shared by device and server; reducer and route tests 409"
     },
     {
       "id": "R10",
@@ -713,7 +713,7 @@ Question for Bill (credential only, A01): create SHIFTY's own Supabase project a
     { "id": "A12", "assumption": "Location retention default 90 days (30/90/365/keep), applied on app open and sync with hard delete and redaction", "impact": "medium", "needsBill": false, "status": "assumed" },
     { "id": "A13", "assumption": "Signing in from device mode offers to upload this device's sessions; nothing uploads without a tap", "impact": "medium", "needsBill": false, "status": "assumed" },
     { "id": "A14", "assumption": "Sign-out warns with the unsynced count, then clears device data", "impact": "medium", "needsBill": false, "status": "assumed" },
-    { "id": "A15", "assumption": "Events dated more than 10 minutes ahead of server time are refused with a device-clock message", "impact": "low", "needsBill": false, "status": "assumed" },
+    { "id": "A15", "assumption": "Events dated more than 2 minutes ahead of server time are accepted, flagged device_clock_ahead and shown; never silently edited", "impact": "low", "needsBill": false, "status": "assumed" },
     { "id": "A16", "assumption": "Earnings = round half-up(net_ms x hourly_rate_minor / 3600000) in the session currency", "impact": "low", "needsBill": false, "status": "assumed" },
     { "id": "A17", "assumption": "Import accepts SHIFTY JSON and a documented CSV; imported sessions labelled Import", "impact": "low", "needsBill": false, "status": "assumed" },
     { "id": "A18", "assumption": "Phase 3 iOS Live Activities is a written spec only, not built", "impact": "low", "needsBill": false, "status": "assumed" }
@@ -742,7 +742,7 @@ Question for Bill (credential only, A01): create SHIFTY's own Supabase project a
   },
   "migrationRanges": [
     { "range": "0001-0009", "owner": "template", "purpose": "foundation (exists)" },
-    { "range": "0020-0099", "owner": "database-engineer", "purpose": "SHIFTY schema, constraints, commit_shift_events(), RLS, capability map" }
+    { "range": "0100-0199", "owner": "database-engineer", "purpose": "SHIFTY schema, constraints, commit_shift_events(), RLS, capability map" }
   ],
   "release": {
     "owner": "release-engineer",

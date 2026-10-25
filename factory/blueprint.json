@@ -852,13 +852,12 @@
     },
     {
       "id": "R09",
-      "rule": "One person's sessions never overlap in time (trash excluded); manual entries, imports and corrections that would overlap are refused naming the other session",
+      "rule": "No unintentional overlap: clock-in, manual entry, import, restore and corrections that would overlap another session are refused naming it unless the person explicitly confirms",
       "enforcedIn": [
-        "database",
         "api",
         "ui"
       ],
-      "test": "deferrable exclusion constraint on (user_id, tstzrange(started_at, coalesce(ended_at, infinity))) where deleted_at is null; route test 409"
+      "test": "reducer findOverlap shared by device and server; reducer and route tests 409"
     },
     {
       "id": "R10",
@@ -1370,7 +1369,7 @@
     },
     {
       "id": "A15",
-      "assumption": "Events dated more than 10 minutes ahead of server time are refused with a device-clock message",
+      "assumption": "Events dated more than 2 minutes ahead of server time are accepted, flagged device_clock_ahead and shown; never silently edited",
       "impact": "low",
       "needsBill": false,
       "status": "assumed"
@@ -1468,7 +1467,7 @@
       "purpose": "foundation (exists)"
     },
     {
-      "range": "0020-0099",
+      "range": "0100-0199",
       "owner": "database-engineer",
       "purpose": "SHIFTY schema, constraints, commit_shift_events(), RLS, capability map"
     }

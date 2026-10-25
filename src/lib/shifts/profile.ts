@@ -60,7 +60,7 @@ export function defaultSettings(reportingTimeZone: string, now = 0): Settings {
     defaultPayRateMinor: null,
     currency: "TZS",
     plannedWeekdays: [1, 2, 3, 4, 5, 6],
-    locationRetentionDays: null,
+    locationRetentionDays: 90,
     reducedMotion: "system",
     haptics: true,
     displayName: "",
