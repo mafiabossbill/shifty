@@ -10,6 +10,7 @@ import { jsonError } from "@/lib/api";
 import { APP_CONFIG, APP_TIMEZONE, SELF_SERVE } from "@/lib/app-config";
 import { SupabaseTeamRepository, type TeamRepository } from "@/lib/data/team";
 import { isRole, type Role } from "@/lib/permissions";
+import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 
 export interface SessionUser {
@@ -71,6 +72,8 @@ export function pickMembership<T extends { organization_id: string }>(rows: T[],
 export const getSessionState = cache(async (): Promise<SessionState> => {
   // Session data is per request: never prerender it (Cache Components).
   await connection();
+  // Device mode: no Supabase on this deployment means nobody is signed in (never throw).
+  if (!supabaseConfigured()) return { status: "anonymous" };
   const supabase = await createClient();
   // getClaims() verifies the JWT; never trust getSession() on the server.
   const { data: claimsData } = await supabase.auth.getClaims();

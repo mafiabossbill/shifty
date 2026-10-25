@@ -131,7 +131,7 @@ export const shiftEventSchema = z.discriminatedUnion("type", [
 ]);
 
 export const syncBatchSchema = z.strictObject({
-  events: z.array(z.unknown()).min(1).max(200),
+  events: z.array(z.unknown()).min(1).max(100),
 });
 
 export function parseShiftEvent(value: unknown): { ok: true; event: ShiftEvent } | { ok: false; message: string } {
