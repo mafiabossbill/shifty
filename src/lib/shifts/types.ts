@@ -147,6 +147,8 @@ export type ShiftEvent =
       allowOverlap?: boolean;
     } & SessionDetails)
   | (EventBase & { type: "rezone"; sessionId: string; reportingTimeZone: string; expectedRevision: number })
+  /** Restores a session from a backup exactly as exported (origin, locations, audit history kept). */
+  | (EventBase & { type: "import_session"; sessionId: string; session: ShiftSession; allowOverlap?: boolean })
   | (EventBase & { type: "delete"; sessionId: string })
   | (EventBase & { type: "restore"; sessionId: string })
   | (EventBase & { type: "purge"; sessionId: string });

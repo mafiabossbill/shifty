@@ -149,6 +149,22 @@ export function applyEvent(state: ShiftState, event: ShiftEvent): ApplyResult {
     return put(state, newSession(event, event.startedAt, event.endedAt, event.breaks));
   }
 
+  if (event.type === "import_session") {
+    if (existing) return existing.originEventId === event.session.originEventId ? { ok: true, state, session: existing } : fail("validation", "This session id is already used.");
+    const s = event.session;
+    if (s.id !== event.sessionId) return fail("validation", "The session id doesn't match.");
+    if (!isValidTimeZone(s.reportingTimeZone)) return fail("validation", "Unknown reporting timezone.");
+    if (!validGoal(s.goalSeconds)) return fail("validation", "The goal must be between 1 minute and 48 hours.");
+    if (s.endedAt === null) return fail("validation", "Only finished sessions can be imported.");
+    const problem = validateTimes(s);
+    if (problem) return fail("chronology", problem);
+    if (s.deletedAt === null && !event.allowOverlap) {
+      const other = findOverlap(state, s.startedAt, s.endedAt);
+      if (other) return fail("overlap", "This session overlaps one you already have.", other.id);
+    }
+    return put(state, { ...s, breaks: sortBreaks(s.breaks), revision: 1, updatedAt: event.recordedAt });
+  }
+
   if (!existing) return fail("not_found", "That session doesn't exist.");
   const session = existing;
 

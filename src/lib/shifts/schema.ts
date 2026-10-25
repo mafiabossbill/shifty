@@ -48,6 +48,39 @@ const fixSchema = z.strictObject({
 
 const goal = z.number().int().min(60).max(48 * 3600);
 
+const revisionSnapshot = z.strictObject({ startedAt: instant, endedAt: instant.nullable(), breaks: z.array(breakSchema).max(100) });
+
+/** A whole session as exported (backups / import). */
+export const sessionSchema = z.strictObject({
+  id,
+  originEventId: id,
+  originalStartedAt: instant,
+  startedAt: instant,
+  endedAt: instant.nullable(),
+  origin: z.enum(["timer", "manual"]),
+  reportingTimeZone: zone,
+  startTimeZone: zone,
+  endTimeZone: zone.nullable(),
+  goalSeconds: goal,
+  title: text(120),
+  notes: text(4000),
+  projectId: id.nullable(),
+  tags: z.array(text(32)).max(12),
+  payRateMinor: z.number().int().min(0).max(1_000_000_000).nullable(),
+  currency: z.string().regex(/^[A-Z]{3}$/).nullable(),
+  mood: z.number().int().min(1).max(5).nullable(),
+  energy: z.number().int().min(1).max(5).nullable(),
+  breaks: z.array(breakSchema).max(100),
+  locations: z.array(fixSchema).max(20),
+  revisions: z.array(z.strictObject({ id, at: instant, reason: text(500), previous: revisionSnapshot, updated: revisionSnapshot })).max(200),
+  flags: z.array(z.enum(["device_clock_ahead", "device_clock_behind", "timezone_changed"])).max(10),
+  archivedAt: instant.nullable(),
+  deletedAt: instant.nullable(),
+  revision: z.number().int().min(1),
+  createdAt: instant,
+  updatedAt: instant,
+});
+
 export const shiftEventSchema = z.discriminatedUnion("type", [
   z.strictObject({ ...base, ...details, type: z.literal("clock_in"), sessionId: id, goalSeconds: goal, reportingTimeZone: zone }),
   z.strictObject({ ...base, type: z.literal("break_start"), sessionId: id, breakId: id, kind: z.enum(["rest", "meal", "other"]).optional() }),
@@ -91,6 +124,7 @@ export const shiftEventSchema = z.discriminatedUnion("type", [
     allowOverlap: z.boolean().optional(),
   }),
   z.strictObject({ ...base, type: z.literal("rezone"), sessionId: id, reportingTimeZone: zone, expectedRevision: z.number().int().min(1) }),
+  z.strictObject({ ...base, type: z.literal("import_session"), sessionId: id, session: sessionSchema, allowOverlap: z.boolean().optional() }),
   z.strictObject({ ...base, type: z.literal("delete"), sessionId: id }),
   z.strictObject({ ...base, type: z.literal("restore"), sessionId: id }),
   z.strictObject({ ...base, type: z.literal("purge"), sessionId: id }),
