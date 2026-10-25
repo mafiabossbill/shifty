@@ -1,0 +1,931 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mafiabossbill/bill-app-factory/intake/APP_BLUEPRINT.schema.json",
+  "title": "Bill App Factory — app blueprint",
+  "description": "Machine-readable product blueprint. Written by the product-architect in phase 1, read by the orchestrator to route agents, plan tasks and assign ownership. Human view: intake/PRODUCT_BLUEPRINT_TEMPLATE.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "app",
+    "users",
+    "roles",
+    "entities",
+    "coreRules",
+    "flows",
+    "screens",
+    "capabilities",
+    "stack",
+    "pwa",
+    "integrations",
+    "environments",
+    "assumptions",
+    "team",
+    "migrationRanges",
+    "release"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "slug",
+        "oneLiner",
+        "brand",
+        "locale",
+        "domain"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60
+        },
+        "slug": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$"
+        },
+        "oneLiner": {
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 240
+        },
+        "tenancy": {
+          "enum": [
+            "company",
+            "saas"
+          ],
+          "description": "company (default): one organization, people join by invite. saas: people sign up and create their own workspaces (bootstrap --saas)."
+        },
+        "brand": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "color"
+          ],
+          "properties": {
+            "color": {
+              "type": "string",
+              "pattern": "^#[0-9a-fA-F]{6}$"
+            },
+            "logo": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "locale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "timezone",
+            "currency",
+            "language"
+          ],
+          "properties": {
+            "timezone": {
+              "type": "string",
+              "pattern": "^[A-Za-z_]+(/[A-Za-z0-9_+-]+)*$"
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            },
+            "currencyDecimals": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 3
+            },
+            "language": {
+              "type": "string",
+              "pattern": "^[a-z]{2}(-[A-Z]{2})?$"
+            },
+            "weekStart": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 6
+            }
+          }
+        },
+        "domain": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "host": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[a-z0-9.-]+\\.[a-z]{2,}$"
+            },
+            "status": {
+              "enum": [
+                "none",
+                "planned",
+                "purchased",
+                "live"
+              ]
+            },
+            "canonical": {
+              "enum": [
+                "apex",
+                "www",
+                "subdomain"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "users": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "segment",
+          "devices"
+        ],
+        "properties": {
+          "segment": {
+            "type": "string"
+          },
+          "estimatedCount": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "devices": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "phone",
+                "tablet",
+                "desktop"
+              ]
+            }
+          },
+          "network": {
+            "enum": [
+              "good",
+              "variable",
+              "poor"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "label",
+          "capabilities",
+          "home"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z_]*$"
+          },
+          "label": {
+            "type": "string"
+          },
+          "capabilities": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/capability"
+            }
+          },
+          "home": {
+            "$ref": "#/$defs/route"
+          },
+          "signsIn": {
+            "type": "boolean",
+            "description": "False for people who only receive messages/reports (admin-created accounts)."
+          }
+        }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "table",
+          "tenantScoped",
+          "fields",
+          "deletion",
+          "audit"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "table": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*s$"
+          },
+          "tenantScoped": {
+            "type": "boolean"
+          },
+          "fields": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name",
+                "type"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "type": {
+                  "enum": [
+                    "text",
+                    "integer",
+                    "numeric",
+                    "money",
+                    "boolean",
+                    "date",
+                    "timestamptz",
+                    "time",
+                    "uuid",
+                    "enum",
+                    "jsonb",
+                    "file",
+                    "geo",
+                    "reference",
+                    "money_minor",
+                    "signature"
+                  ],
+                  "description": "money = numeric(14,2) user-entered amounts; money_minor = integer minor units from a provider (Stripe) + currency; signature = captured signature image + signer + hash (immutable once signed)."
+                },
+                "required": {
+                  "type": "boolean"
+                },
+                "references": {
+                  "type": "string"
+                },
+                "values": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "notes": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "statuses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "deletion": {
+            "enum": [
+              "hard",
+              "archive",
+              "deactivate",
+              "never"
+            ]
+          },
+          "audit": {
+            "type": "boolean"
+          },
+          "owner": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "coreRules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "rule",
+          "enforcedIn",
+          "test"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^R[0-9]{2}$"
+          },
+          "rule": {
+            "type": "string"
+          },
+          "enforcedIn": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "database",
+                "api",
+                "ui",
+                "job"
+              ]
+            }
+          },
+          "test": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "flows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "roles",
+          "steps",
+          "core"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^F[0-9]{2}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "steps": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "string"
+            }
+          },
+          "core": {
+            "type": "boolean",
+            "description": "Part of the useful core built first."
+          }
+        }
+      }
+    },
+    "screens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "route",
+          "purpose",
+          "roles",
+          "phoneLayout"
+        ],
+        "properties": {
+          "route": {
+            "$ref": "#/$defs/route"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string"
+            }
+          },
+          "primaryAction": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phoneLayout": {
+            "enum": [
+              "cards",
+              "table-scroll",
+              "form",
+              "detail",
+              "dashboard",
+              "button-grid",
+              "map",
+              "camera",
+              "public"
+            ]
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "UI_HEAVY",
+          "COMPLEX_DATA",
+          "SUPABASE",
+          "AUTH",
+          "MULTI_TENANT",
+          "PAYMENTS",
+          "BILLING",
+          "PROVIDER_DATA",
+          "REALTIME",
+          "PWA",
+          "MOBILE_HEAVY",
+          "FILE_UPLOADS",
+          "THIRD_PARTY_API",
+          "MESSAGING",
+          "EMAIL",
+          "PUSH",
+          "SCHEDULED_JOBS",
+          "REPORTING",
+          "IMPORT_EXPORT",
+          "ANALYTICS",
+          "CUSTOM_DOMAIN",
+          "PRODUCTION_RELEASE",
+          "DOCS_HANDOVER",
+          "SENSITIVE_DATA",
+          "OFFLINE"
+        ]
+      }
+    },
+    "stack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "template",
+        "deviations"
+      ],
+      "properties": {
+        "template": {
+          "enum": [
+            "nextjs-supabase"
+          ]
+        },
+        "deviations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "area",
+              "choice",
+              "reason"
+            ],
+            "properties": {
+              "area": {
+                "type": "string"
+              },
+              "choice": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "pwa": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "offline",
+        "push"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "offline": {
+          "enum": [
+            "none",
+            "offline-page",
+            "read-cache",
+            "offline-queue"
+          ],
+          "description": "offline-queue = writes captured offline and synced later; must be built and tested explicitly."
+        },
+        "push": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "sync": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "scope",
+            "trigger",
+            "conflictPolicy",
+            "maxOfflineHours",
+            "storageBudgetMb",
+            "clearOnSignOut"
+          ],
+          "properties": {
+            "scope": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              },
+              "description": "What works offline (entities/flows)."
+            },
+            "trigger": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "enum": [
+                  "online-event",
+                  "app-open",
+                  "manual",
+                  "background-sync",
+                  "interval"
+                ]
+              }
+            },
+            "conflictPolicy": {
+              "type": "string",
+              "minLength": 10,
+              "description": "e.g. 'server wins for review fields; client_id makes replays idempotent; edits after approval rejected with 409'."
+            },
+            "maxOfflineHours": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "storageBudgetMb": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "clearOnSignOut": {
+              "const": true
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "offline": {
+            "const": "offline-queue"
+          }
+        },
+        "required": [
+          "offline"
+        ]
+      },
+      "then": {
+        "required": [
+          "sync"
+        ]
+      }
+    },
+    "integrations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "provider",
+          "purpose",
+          "direction",
+          "credentials",
+          "status"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "inbound",
+              "outbound",
+              "both"
+            ]
+          },
+          "credentials": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            }
+          },
+          "status": {
+            "enum": [
+              "planned",
+              "mock",
+              "live"
+            ]
+          },
+          "leadTime": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scheduledJobs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "schedule",
+          "timezone",
+          "purpose",
+          "idempotencyKey"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "schedule": {
+            "type": "string",
+            "pattern": "^\\S+ \\S+ \\S+ \\S+ \\S+$"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "idempotencyKey": {
+            "type": "string"
+          },
+          "timezone": {
+            "type": "string",
+            "pattern": "^(UTC|organization|[A-Za-z_]+(/[A-Za-z0-9_+-]+)+)$",
+            "description": "Timezone of `schedule`. pg_cron runs in UTC: use UTC with a frequent tick and let the app decide per organization ('organization'), or an IANA zone the app converts."
+          }
+        }
+      }
+    },
+    "environments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "development",
+        "preview",
+        "production"
+      ],
+      "properties": {
+        "development": {
+          "$ref": "#/$defs/environment"
+        },
+        "preview": {
+          "$ref": "#/$defs/environment"
+        },
+        "production": {
+          "$ref": "#/$defs/environment"
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "assumption",
+          "impact",
+          "needsBill",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^A[0-9]{2}$"
+          },
+          "assumption": {
+            "type": "string"
+          },
+          "impact": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "needsBill": {
+            "type": "boolean",
+            "description": "True only if it changes product behaviour, architecture, security, money or irreversible infrastructure."
+          },
+          "status": {
+            "enum": [
+              "assumed",
+              "confirmed",
+              "replaced"
+            ]
+          }
+        }
+      }
+    },
+    "questionsForBill": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "team": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chosen",
+        "notChosen"
+      ],
+      "properties": {
+        "chosen": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/teamEntry"
+          }
+        },
+        "notChosen": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/teamEntry"
+          }
+        }
+      }
+    },
+    "migrationRanges": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "range",
+          "owner"
+        ],
+        "properties": {
+          "range": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{4}$"
+          },
+          "owner": {
+            "$ref": "#/$defs/agent"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "session": {
+            "type": "string",
+            "description": "Cloud session / lane when one agent runs several (e.g. 'integration-A')."
+          }
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "firstReleaseScope"
+      ],
+      "properties": {
+        "owner": {
+          "const": "release-engineer"
+        },
+        "firstReleaseScope": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "productionUrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^https://"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "string",
+      "pattern": "^[a-z][a-z_]*:[a-z_]+(:[a-z_]+)?$"
+    },
+    "route": {
+      "type": "string",
+      "pattern": "^/[a-z0-9\\-/\\[\\]?=&_]*$"
+    },
+    "agent": {
+      "enum": [
+        "orchestrator",
+        "product-architect",
+        "ux-architect",
+        "frontend-engineer",
+        "backend-engineer",
+        "database-engineer",
+        "supabase-engineer",
+        "integration-engineer",
+        "pwa-mobile-engineer",
+        "devops-engineer",
+        "security-reviewer",
+        "qa-engineer",
+        "release-engineer",
+        "documentation-engineer",
+        "template"
+      ]
+    },
+    "teamEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "agent",
+        "reason"
+      ],
+      "properties": {
+        "agent": {
+          "$ref": "#/$defs/agent"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 5
+        },
+        "covers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/agent"
+          },
+          "description": "Agents whose small job this agent absorbs (never security-reviewer, qa-engineer or release-engineer)."
+        },
+        "session": {
+          "type": "string"
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "supabase",
+        "url"
+      ],
+      "properties": {
+        "supabase": {
+          "type": "string",
+          "description": "Project name/ref placeholder, never a key."
+        },
+        "url": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

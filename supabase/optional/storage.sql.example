@@ -1,0 +1,30 @@
+-- Private file storage scoped to the organization in the path's first segment.
+-- Copy into a migration in your range; adjust the bucket name, size, MIME list and capabilities.
+-- Path convention (src/lib/uploads.ts storagePath): <organization_id>/<entity_id>/<uuid>-<safe-name>
+-- Photos from phones: compress in the browser first (compressImage in src/lib/uploads.ts).
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('attachments', 'attachments', false, 10485760,
+        array['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf', 'text/csv'])
+on conflict (id) do update
+  set public = excluded.public, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+
+create or replace function try_uuid(value text) returns uuid
+language plpgsql immutable as $$
+begin
+  return value::uuid;
+exception when others then
+  return null;
+end;
+$$;
+
+-- Read: any active member of the organization named in the first path segment.
+create policy attachments_select on storage.objects for select to authenticated
+  using (bucket_id = 'attachments' and try_uuid(split_part(name, '/', 1)) in (select my_organization_ids()));
+-- Write: members with the entity's create capability (replace 'project:create' with yours).
+create policy attachments_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'attachments' and has_capability(try_uuid(split_part(name, '/', 1)), 'project:create'));
+-- Delete: only with the entity's delete capability; most products keep evidence and never delete.
+create policy attachments_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'attachments' and has_capability(try_uuid(split_part(name, '/', 1)), 'project:delete'));
+-- Serve files with short-lived signed URLs (createSignedUrl, 1 hour), never public URLs.

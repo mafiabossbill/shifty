@@ -1,0 +1,202 @@
+#!/usr/bin/env bash
+# release — guarded release runner. Refuses to continue past a failed gate; never touches the
+# production database unless told to twice, explicitly.
+#
+# Usage:
+#   scripts/release preflight --dir APP --preview-url URL [--env-file FILE] [--migrations-reviewed] [--manual-ok] [--branch main]
+#                             [--rehearsal]   (local dry run against http://localhost; never for a real release)
+#   scripts/release migrate   --dir APP --project-ref REF --confirm-production REF
+#   scripts/release verify    --dir APP --url https://production.example [--deep] [--www redirect|serve|skip]
+#                             [--public "/login,/privacy"] [--protected "/dashboard,/today"]   (also for preflight)
+#
+# preflight  gates, in order (stops at the first failure):
+#   1 git: clean tree on the release branch, pushed      2 check: lint, typecheck, tests, build, local DB + RLS
+#   3 env-check --environment production                 4 migrations: none edited since the last release tag, new ones
+#                                                          reviewed (--migrations-reviewed); 4b factory/release-gates.sh if present;
+#                                                          4c legal: no [placeholders] left in src/lib/legal.ts
+#   5 verify-production against the preview URL          6 manual checks: every box in factory/MANUAL_CHECKS.md ticked
+#                                                          (or --manual-ok when the app has no such file)
+#   → writes .release-preflight (HEAD sha) and a line in factory/RELEASES.md
+# migrate    applies pending migrations to PRODUCTION. Needs a passing preflight for HEAD, SUPABASE_ACCESS_TOKEN,
+#            and --confirm-production equal to --project-ref (typed twice on purpose). Shows pending first.
+# verify     runs verify-production against the production URL after the deploy, records the result and, when it
+#            passes, tags the commit release-<date>-<sha> (the next preflight's migration baseline).
+# Deploying itself is Vercel's job (merge to main → production build). This script gates and proves.
+set -euo pipefail
+# shellcheck source-path=SCRIPTDIR source=lib/common.sh
+source "$(dirname "$0")/lib/common.sh"
+# Sibling scripts: scripts/ in the factory, scripts/factory/ inside an app (installed by bootstrap).
+SCRIPTS="$(cd "$(dirname "$0")" && pwd)"
+
+cmd="${1:-}"
+[[ -n "$cmd" ]] && shift
+dir="." preview="" env_file="" reviewed=0 manual=0 rehearsal=0 public_pages="" protected_pages="" branch="main" ref="" confirm="" prod_url="" www="redirect"
+deep=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dir) dir="${2:-}"; shift 2 ;;
+    --preview-url) preview="${2:-}"; shift 2 ;;
+    --env-file) env_file="${2:-}"; shift 2 ;;
+    --migrations-reviewed) reviewed=1; shift ;;
+    --manual-ok) manual=1; shift ;;
+    --rehearsal) rehearsal=1; shift ;;
+    --branch) branch="${2:-}"; shift 2 ;;
+    --project-ref) ref="${2:-}"; shift 2 ;;
+    --confirm-production) confirm="${2:-}"; shift 2 ;;
+    --url) prod_url="${2:-}"; shift 2 ;;
+    --deep) deep=(--deep); shift ;;
+    --www) www="${2:-}"; shift 2 ;;
+    --public) public_pages="${2:-}"; shift 2 ;;
+    --protected) protected_pages="${2:-}"; shift 2 ;;
+    -h | --help) usage_from_header "$0"; exit 0 ;;
+    *) die "Unknown option: $1 (see --help)" ;;
+  esac
+done
+case "$cmd" in preflight | migrate | verify) ;; -h | --help | "") usage_from_header "$0"; exit 0 ;; *) die "Unknown command: $cmd" ;; esac
+[[ -f "$dir/package.json" ]] || die "$dir is not an app directory."
+dir="$(cd "$dir" && pwd)"
+record() { printf '| %s | %s | %s | %s |\n' "$(date -u +%Y-%m-%dT%H:%MZ)" "$cmd" "$(git -C "$dir" rev-parse --short HEAD 2>/dev/null || echo -)" "$1" >>"$dir/factory/RELEASES.md"; }
+gate() { # gate NAME COMMAND... — run, stop the release on failure
+  local name="$1"
+  shift
+  info ""
+  info "── Gate: $name"
+  if "$@"; then pass "gate: $name"; else
+    fail "gate: $name"
+    record "STOPPED at gate: $name"
+    info "Release stopped. Fix the failure above and run preflight again. Nothing was deployed or migrated."
+    exit 1
+  fi
+}
+mkdir -p "$dir/factory"
+[[ -f "$dir/factory/RELEASES.md" ]] || printf '# RELEASES\n\n| When (UTC) | Step | Commit | Result |\n| --- | --- | --- | --- |\n' >"$dir/factory/RELEASES.md"
+
+git_gate() {
+  git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1 || { info "not a git repository"; return 1; }
+  local dirty current
+  dirty="$(git -C "$dir" status --porcelain -- . ':!factory/RELEASES.md' ':!.release-preflight')"
+  [[ -z "$dirty" ]] || { info "uncommitted changes:"; info "$dirty"; return 1; }
+  current="$(git -C "$dir" rev-parse --abbrev-ref HEAD)"
+  [[ "$current" == "$branch" ]] || { info "on '$current', release branch is '$branch'"; return 1; }
+  if git -C "$dir" remote get-url origin >/dev/null 2>&1; then
+    git -C "$dir" fetch -q origin "$branch" || { info "could not fetch origin/$branch"; return 1; }
+    [[ "$(git -C "$dir" rev-parse HEAD)" == "$(git -C "$dir" rev-parse "origin/$branch")" ]] || { info "HEAD is not origin/$branch: push or pull first"; return 1; }
+  else
+    warn "no 'origin' remote: can't prove the release commit is what Vercel builds"
+  fi
+}
+
+migration_gate() {
+  local base edited added
+  # Baseline = the last verified release (tagged by `release verify`). Before the first release nothing has
+  # shipped, so editing or deleting a migration (e.g. the template's example entity) is allowed; review still applies.
+  base="$(git -C "$dir" describe --tags --abbrev=0 --match 'release-*' 2>/dev/null || true)"
+  if [[ -n "$base" ]]; then
+    edited="$(git -C "$dir" diff --name-only --diff-filter=MDR "$base" HEAD -- supabase/migrations || true)"
+    added="$(git -C "$dir" diff --name-only --diff-filter=A "$base" HEAD -- supabase/migrations || true)"
+  else
+    base="first release"
+    edited=""
+    added="$(git -C "$dir" ls-files -- supabase/migrations)"
+  fi
+  if [[ -n "$edited" ]]; then info "migrations changed after they shipped in $base (add a new migration instead):"; info "$edited"; return 1; fi
+  if [[ -n "$added" && "$reviewed" != "1" ]]; then
+    info "new migrations since $base need a review (destructive changes, locks, RLS, backfill) — then pass --migrations-reviewed:"
+    info "$added"
+    return 1
+  fi
+  info "${added:-no new migrations} (since $base)"
+}
+
+app_gates() {
+  # Product-specific gates (e.g. Stripe live keys present, webhooks registered): factory/release-gates.sh, if the app has one.
+  if [[ -x "$dir/factory/release-gates.sh" ]]; then (cd "$dir" && ./factory/release-gates.sh); else info "no factory/release-gates.sh (optional)"; fi
+}
+
+# Apps from the template carry src/lib/legal.ts; older apps without `legal:check` are told, not blocked.
+legal_gate() {
+  if grep -q '"legal:check"' "$dir/package.json"; then (cd "$dir" && npm run --silent legal:check)
+  else warn "no legal:check script: confirm /privacy, /terms, /cookies and /data-deletion by hand"; fi
+}
+in_app() { (cd "$dir" && SUPABASE_PROJECT_REF="$ref" npm run --silent "$1"); }
+
+manual_gate() {
+  local file="$dir/factory/MANUAL_CHECKS.md" open_items
+  if [[ -f "$file" ]]; then
+    # Every "- [ ]" item must be ticked "- [x]" for this release (commit the ticked file with the release).
+    open_items="$(grep -E '^[[:space:]]*- \[ \]' "$file" || true)"
+    if [[ -n "$open_items" ]]; then info "Unticked manual checks in factory/MANUAL_CHECKS.md:"; info "$open_items"; return 1; fi
+    info "All manual checks in factory/MANUAL_CHECKS.md are ticked."
+    return 0
+  fi
+  info "Manual checks (all must be true):"
+  info "  - preview opened at 375, 430, tablet and desktop, light and dark; no sideways scroll, 44px targets"
+  info "  - every flow changed in this release tried by hand on the preview"
+  info "  - rollback known: Vercel 'Promote previous deployment'; migrations are forward-only (fix-forward plan written)"
+  [[ "$manual" == "1" ]] || { info "pass --manual-ok once they are done (or add factory/MANUAL_CHECKS.md)"; return 1; }
+}
+
+case "$cmd" in
+  preflight)
+    [[ -n "$preview" ]] || die "--preview-url is required (the Vercel preview of the release commit)."
+    info "Release preflight for $dir (release owner: release-engineer)"
+    gate "git: clean, on $branch, pushed" git_gate
+    gate "check: lint, typecheck, tests, build, local DB + RLS" "$SCRIPTS/check" --dir "$dir" --build --db
+    if [[ -n "$env_file" ]]; then gate "env: production variables" "$SCRIPTS/env-check" --dir "$dir" --env-file "$env_file" --environment production
+    else gate "env: classification and leak scan" "$SCRIPTS/env-check" --dir "$dir" --environment production; fi
+    gate "migrations: none edited, new ones reviewed" migration_gate
+    gate "app-specific gates (factory/release-gates.sh)" app_gates
+    gate "legal: privacy, terms, cookies and data deletion filled in" legal_gate
+    preview_args=(--www skip)
+    [[ -n "$public_pages" ]] && preview_args+=(--public "$public_pages")
+    [[ -n "$protected_pages" ]] && preview_args+=(--protected "$protected_pages")
+    [[ "$rehearsal" == "1" ]] && preview_args+=(--allow-http)
+    gate "preview: verify-production $preview" "$SCRIPTS/verify-production" "$preview" "${preview_args[@]}"
+    gate "manual checks" manual_gate
+    if [[ "$rehearsal" == "1" ]]; then
+      record "preflight REHEARSAL passed (not a release; preview $preview)"
+      info "Rehearsal passed. No preflight stamp written: a real release needs an https preview."
+      exit 0
+    fi
+    git -C "$dir" rev-parse HEAD >"$dir/.release-preflight"
+    record "preflight PASSED (preview $preview)"
+    info ""
+    info "Preflight passed for $(git -C "$dir" rev-parse --short HEAD). Next: apply migrations if any (release migrate), merge/deploy, then release verify."
+    ;;
+  migrate)
+    [[ -n "$ref" && -n "$confirm" ]] || die "Production migrations need --project-ref REF and --confirm-production REF (the same value, typed twice)."
+    [[ "$ref" == "$confirm" ]] || die "--confirm-production ($confirm) does not match --project-ref ($ref). Nothing was applied."
+    [[ -f "$dir/.release-preflight" && "$(cat "$dir/.release-preflight")" == "$(git -C "$dir" rev-parse HEAD)" ]] || die "No passing preflight for this commit. Run 'release preflight' first."
+    [[ -n "${SUPABASE_ACCESS_TOKEN:-}" ]] || die "SUPABASE_ACCESS_TOKEN is not set (it belongs in your environment, never in a file)."
+    info "PRODUCTION project $ref — pending migrations:"
+    (cd "$dir" && SUPABASE_PROJECT_REF="$ref" npm run --silent db:migrate -- --status)
+    gate "apply migrations to production ($ref)" in_app db:migrate
+    gate "live RLS check on production ($ref)" in_app db:check-rls
+    record "migrations applied to $ref and RLS verified"
+    ;;
+  verify)
+    [[ -n "$prod_url" ]] || die "--url is required (the production URL)."
+    set +e
+    verify_args=(--www "$www" "${deep[@]}")
+    [[ -n "$public_pages" ]] && verify_args+=(--public "$public_pages")
+    [[ -n "$protected_pages" ]] && verify_args+=(--protected "$protected_pages")
+    "$SCRIPTS/verify-production" "$prod_url" "${verify_args[@]}"
+    rc=$?
+    set -e
+    case "$rc" in
+      0)
+        record "production VERIFIED at $prod_url"
+        # The verified commit becomes the migration baseline for the next release.
+        tag="release-$(date -u +%Y%m%d-%H%M)-$(git -C "$dir" rev-parse --short HEAD)"
+        if git -C "$dir" tag -a "$tag" -m "Verified in production at $prod_url" 2>/dev/null; then
+          info "Tagged $tag."
+          if git -C "$dir" remote get-url origin >/dev/null 2>&1; then git -C "$dir" push -q origin "$tag" || warn "could not push $tag; push it so the next preflight uses it"; fi
+        else
+          warn "could not create tag $tag"
+        fi
+        info "Production verified. It is now correct to say it is live." ;;
+      2) record "production UNVERIFIED (unreachable from here)"; info "Could not verify from this machine. Do not report it as live until verified elsewhere."; exit 2 ;;
+      *) record "production verification FAILED at $prod_url"; info "Production verification failed. Roll back (Vercel: promote the previous deployment) or fix forward now."; exit 1 ;;
+    esac
+    ;;
+esac

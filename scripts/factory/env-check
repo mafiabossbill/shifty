@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+# env-check — classify, validate and leak-scan an app's environment variables.
+#
+# Usage:
+#   scripts/env-check [--dir APP_DIR] [--env-file FILE] [--environment development|preview|production]
+#
+# Reads the class tags in .env.example ([public] [server] [secret] [scripts], (required)/(optional)) and:
+#   1. fails if a variable is untagged, or a NEXT_PUBLIC_ variable is tagged [secret], or a name that looks
+#      secret (KEY|SECRET|TOKEN|PASSWORD|PRIVATE) is exposed with NEXT_PUBLIC_ (except the Supabase anon key)
+#   2. with --env-file (e.g. from `vercel env pull`), fails if a (required) runtime variable is empty and,
+#      for production, if NEXT_PUBLIC_SITE_URL / APP URLs aren't https or still point at localhost
+#   3. scans tracked files for committed secrets (JWTs, Supabase secret keys, private keys, .env files)
+# Never prints a value.
+set -euo pipefail
+# shellcheck source-path=SCRIPTDIR source=lib/common.sh
+source "$(dirname "$0")/lib/common.sh"
+
+dir="." env_file="" environment="development"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dir) dir="${2:-}"; shift 2 ;;
+    --env-file) env_file="${2:-}"; shift 2 ;;
+    --environment) environment="${2:-}"; shift 2 ;;
+    -h | --help) usage_from_header "$0"; exit 0 ;;
+    *) die "Unknown option: $1 (see --help)" ;;
+  esac
+done
+[[ "$environment" =~ ^(development|preview|production)$ ]] || die "--environment must be development, preview or production."
+example="$dir/.env.example"
+[[ -f "$example" ]] || die "$example not found."
+if [[ -n "$env_file" ]]; then
+  [[ -f "$env_file" ]] || die "$env_file not found."
+  env_file="$(cd "$(dirname "$env_file")" && pwd)/$(basename "$env_file")"
+fi
+
+# 1. Tags.
+tag="" req="" untagged=0
+declare -A CLASS=() REQUIRED=()
+while IFS= read -r line; do
+  if [[ "$line" =~ ^#.*\[(public|server|secret|scripts)\] ]]; then
+    tag="${BASH_REMATCH[1]}"
+    req="optional"
+    [[ "$line" == *"(required)"* ]] && req="required"
+    continue
+  fi
+  if [[ "$line" =~ ^([A-Z][A-Z0-9_]*)= ]]; then
+    var="${BASH_REMATCH[1]}"
+    if [[ -z "$tag" ]]; then fail "$var has no class tag in .env.example"; untagged=1; continue; fi
+    CLASS[$var]="$tag"
+    REQUIRED[$var]="$req"
+  elif [[ -z "$line" ]]; then
+    tag=""
+  fi
+done <"$example"
+if [[ "$untagged" == "0" ]]; then pass "every variable in .env.example has a class tag (${#CLASS[@]} variables)"; fi
+
+before=$FAILURES
+for var in "${!CLASS[@]}"; do
+  if [[ "$var" == NEXT_PUBLIC_* && "${CLASS[$var]}" != "public" ]]; then fail "$var is NEXT_PUBLIC_ but tagged [${CLASS[$var]}]"; fi
+  if [[ "$var" == NEXT_PUBLIC_* && "$var" != "NEXT_PUBLIC_SUPABASE_ANON_KEY" && "$var" != "NEXT_PUBLIC_VAPID_PUBLIC_KEY" && "$var" =~ (KEY|SECRET|TOKEN|PASSWORD|PRIVATE) ]]; then
+    fail "$var looks like a secret but is shipped to the browser (NEXT_PUBLIC_)"
+  fi
+done
+if [[ "$FAILURES" -eq "$before" ]]; then pass "no secret is classified as public"; fi
+
+# 2. Values (never printed).
+if [[ -n "$env_file" ]]; then
+  declare -A VALUE=()
+  while IFS= read -r line; do
+    [[ "$line" =~ ^([A-Z][A-Z0-9_]*)=(.*)$ ]] || continue
+    value="${BASH_REMATCH[2]}"
+    value="${value%\"}"
+    value="${value#\"}"
+    VALUE[${BASH_REMATCH[1]}]="$value"
+  done <"$env_file"
+  for var in "${!CLASS[@]}"; do
+    [[ "${CLASS[$var]}" == "scripts" ]] && continue
+    if [[ "${REQUIRED[$var]}" == "required" && -z "${VALUE[$var]:-}" ]]; then fail "$var is required for the app but empty in $(basename "$env_file")"; fi
+  done
+  if [[ "$environment" == "production" ]]; then
+    for var in NEXT_PUBLIC_SITE_URL APP_URL; do
+      v="${VALUE[$var]:-}"
+      [[ -z "$v" ]] && continue
+      if [[ "$v" != https://* || "$v" == *localhost* || "$v" == *127.0.0.1* ]]; then fail "$var must be an https production URL"; fi
+    done
+    if [[ -n "${VALUE[CRON_SECRET]:-}" && "${#VALUE[CRON_SECRET]}" -lt 32 ]]; then fail "CRON_SECRET is shorter than 32 characters"; fi
+  fi
+  for var in "${!VALUE[@]}"; do
+    [[ -n "${CLASS[$var]:-}" ]] || warn "$var is set in $(basename "$env_file") but not documented in .env.example"
+  done
+  if [[ "$FAILURES" -eq 0 ]]; then pass "required $environment variables are present (values not shown)"; fi
+fi
+
+# 3. Committed secrets.
+if git -C "$dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  tracked_env="$(git -C "$dir" ls-files -- '.env' '.env.*' '**/.env' '**/.env.*' | grep -v -E '(^|/)\.env\.example$' || true)"
+  if [[ -n "$tracked_env" ]]; then fail "env files are committed: $(echo "$tracked_env" | tr '\n' ' ')"; else pass "no .env files are committed"; fi
+  patterns='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJ[A-Za-z0-9_-]{20,}|sb_secret_[A-Za-z0-9_-]{16,}|sbp_[a-f0-9]{30,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----|EAA[A-Za-z0-9]{60,}|sk_live_[A-Za-z0-9]{16,}|whsec_[A-Za-z0-9]{16,}'
+  hits="$(git -C "$dir" grep -I -l -E "$patterns" -- . ':!*.md' ':!**/package-lock.json' 2>/dev/null || true)"
+  if [[ -n "$hits" ]]; then fail "possible secrets committed in: $(echo "$hits" | tr '\n' ' ') (rotate them, then remove)"; else pass "no secret patterns in tracked files"; fi
+else
+  skip "secret scan (not a git repository)"
+fi
+
+if [[ "$FAILURES" -gt 0 ]]; then
+  info "env-check: $FAILURES problem(s)."
+  exit 1
+fi
+info "env-check: OK."

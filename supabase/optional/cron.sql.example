@@ -1,0 +1,38 @@
+-- Scheduled jobs with Supabase Cron (pg_cron + pg_net), calling the app.
+-- Why not Vercel Cron: on the Hobby plan it runs at most once a day. pg_cron runs every minute.
+--
+-- To use: copy to supabase/migrations/<next number in your range>_cron.sql (scripts/bootstrap has already
+-- filled in the app's name below), then after the first deploy store the URL and secret in Vault:
+--   APP_URL=https://<domain> CRON_SECRET=<same as Vercel> npm run db:cron
+-- Until both secrets exist the job is a no-op, so the migration is safe before deployment.
+--
+-- VERIFY, don't trust "Succeeded": cron.job_run_details says Succeeded even when the function
+-- returned early (no Vault secrets). `npm run db:cron -- --status` shows net._http_response codes.
+
+create extension if not exists pg_cron with schema pg_catalog;
+create extension if not exists pg_net with schema extensions;
+
+create or replace function private.trigger_heartbeat_cron() returns bigint
+language plpgsql security definer set search_path = '' as $$
+declare
+  app_url     text;
+  cron_secret text;
+begin
+  select decrypted_secret into app_url from vault.decrypted_secrets where name = 'shifty_app_url';
+  select decrypted_secret into cron_secret from vault.decrypted_secrets where name = 'shifty_cron_secret';
+  if app_url is null or cron_secret is null then
+    raise notice 'Cron is not configured (Vault secrets missing); skipping.';
+    return null;
+  end if;
+  -- pg_net is asynchronous: the response lands in net._http_response.
+  return net.http_get(
+    url := rtrim(app_url, '/') || '/api/cron/heartbeat',
+    headers := jsonb_build_object('Authorization', 'Bearer ' || cron_secret),
+    timeout_milliseconds := 60000
+  );
+end;
+$$;
+revoke all on function private.trigger_heartbeat_cron() from public, anon, authenticated;
+
+-- Same name → pg_cron updates the existing job, so re-running is safe.
+select cron.schedule('shifty-heartbeat', '*/15 * * * *', 'select private.trigger_heartbeat_cron()');

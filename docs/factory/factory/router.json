@@ -1,0 +1,207 @@
+{
+  "$comment": "Single source of truth for agent routing. Read by tools/validate-blueprints.mjs; the capability table in factory/AGENT_ROUTER.md is generated from it (node tools/router-table.mjs --write).",
+  "base": [
+    "orchestrator",
+    "product-architect",
+    "frontend-engineer",
+    "backend-engineer",
+    "qa-engineer",
+    "release-engineer"
+  ],
+  "neverCovered": [
+    "security-reviewer",
+    "qa-engineer",
+    "release-engineer"
+  ],
+  "capabilities": {
+    "UI_HEAVY": {
+      "agents": [
+        "ux-architect"
+      ],
+      "triggers": ">6 screens, tables/boards/calendars, dashboards, \"Attio/Linear-like\", role-specific homes",
+      "notes": "Lands shell + primitives before feature lanes"
+    },
+    "COMPLEX_DATA": {
+      "agents": [
+        "database-engineer"
+      ],
+      "triggers": ">3 entities, relations, statuses with rules, approvals, history, money",
+      "notes": "Gets the first migration range"
+    },
+    "SUPABASE": {
+      "agents": [
+        "database-engineer"
+      ],
+      "triggers": "Any persistence (template default)",
+      "notes": "Add supabase-engineer for storage, realtime, cron, SMTP or several environments (their own rows)"
+    },
+    "AUTH": {
+      "agents": [
+        "supabase-engineer",
+        "security-reviewer"
+      ],
+      "triggers": "Sign-in, invites, roles, admin-created accounts, SSO",
+      "notes": "SMTP and Auth URL config are part of it; a small app may let devops-engineer or database-engineer cover supabase-engineer"
+    },
+    "MULTI_TENANT": {
+      "agents": [
+        "database-engineer",
+        "security-reviewer"
+      ],
+      "triggers": "Several organizations/customers in one deployment; self-serve workspaces",
+      "notes": "check-rls outsider cases mandatory; workspace switcher; self-serve = bootstrap --saas"
+    },
+    "PAYMENTS": {
+      "agents": [
+        "integration-engineer",
+        "security-reviewer"
+      ],
+      "triggers": "Money moves: checkout, invoices, payouts",
+      "notes": "Webhook-driven state; test mode first"
+    },
+    "BILLING": {
+      "agents": [
+        "integration-engineer",
+        "security-reviewer"
+      ],
+      "triggers": "We charge our customers: plans, trials, subscriptions",
+      "notes": "Plan state gates writes (workspace_active); webhooks per environment"
+    },
+    "PROVIDER_DATA": {
+      "agents": [
+        "integration-engineer",
+        "security-reviewer"
+      ],
+      "triggers": "We read customers' data from a provider (Stripe Connect, Google, banks)",
+      "notes": "Backfill + webhooks + reconcile; tokens never readable by authenticated"
+    },
+    "REALTIME": {
+      "agents": [
+        "supabase-engineer"
+      ],
+      "triggers": "\"live\", see changes instantly, shared boards, chat",
+      "notes": "Realtime + background revalidate"
+    },
+    "PWA": {
+      "agents": [
+        "pwa-mobile-engineer"
+      ],
+      "triggers": "\"install\", phone, field, daily use",
+      "notes": "Decide offline scope explicitly"
+    },
+    "MOBILE_HEAVY": {
+      "agents": [
+        "pwa-mobile-engineer",
+        "ux-architect"
+      ],
+      "triggers": "Most users on phones, camera, GPS, one-handed use",
+      "notes": "Phone-first layouts, not a late pass"
+    },
+    "OFFLINE": {
+      "agents": [
+        "pwa-mobile-engineer",
+        "backend-engineer",
+        "qa-engineer"
+      ],
+      "triggers": "\"work offline\", \"sync later\", bad network",
+      "notes": "Outbox + replayable writes (client_id) + offline test script; pwa.offline read-cache or offline-queue"
+    },
+    "FILE_UPLOADS": {
+      "agents": [
+        "supabase-engineer",
+        "security-reviewer"
+      ],
+      "triggers": "Photos, receipts, documents, attachments (any `file` field)",
+      "notes": "Bucket limits, path policies, signed URLs, compress phone photos"
+    },
+    "THIRD_PARTY_API": {
+      "agents": [
+        "integration-engineer"
+      ],
+      "triggers": "Any external system (ERP, maps, banks)",
+      "notes": "Disabled/mock/live modes"
+    },
+    "MESSAGING": {
+      "agents": [
+        "integration-engineer",
+        "security-reviewer"
+      ],
+      "triggers": "WhatsApp, SMS, chat notifications",
+      "notes": "Template approval lead time: start early"
+    },
+    "EMAIL": {
+      "agents": [
+        "integration-engineer",
+        "supabase-engineer"
+      ],
+      "triggers": "Transactional email beyond auth, digests, documents by email",
+      "notes": "Company-domain SPF/DKIM; src/lib/email modes"
+    },
+    "PUSH": {
+      "agents": [
+        "integration-engineer",
+        "pwa-mobile-engineer"
+      ],
+      "triggers": "\"alerts\", notify my phone",
+      "notes": "VAPID per environment"
+    },
+    "SCHEDULED_JOBS": {
+      "agents": [
+        "supabase-engineer",
+        "backend-engineer"
+      ],
+      "triggers": "Reports, reminders, sweeps, \"every day at\"",
+      "notes": "pg_cron + Vault (npm run db:cron); idempotent per period; schedule timezone explicit"
+    },
+    "REPORTING": {
+      "agents": [
+        "backend-engineer"
+      ],
+      "triggers": "Summaries, exports, printable docs",
+      "notes": "Pure engine, stored snapshots; PDFs via integration-engineer when delivered"
+    },
+    "IMPORT_EXPORT": {
+      "agents": [
+        "backend-engineer",
+        "frontend-engineer"
+      ],
+      "triggers": "\"migrate our spreadsheet\", CSV",
+      "notes": "Preview with per-row errors"
+    },
+    "ANALYTICS": {
+      "agents": [
+        "devops-engineer"
+      ],
+      "triggers": "Product analytics asked for",
+      "notes": "Vercel Analytics first"
+    },
+    "CUSTOM_DOMAIN": {
+      "agents": [
+        "devops-engineer"
+      ],
+      "triggers": "A domain is named or implied",
+      "notes": "docs/DOMAIN_STANDARD.md order"
+    },
+    "PRODUCTION_RELEASE": {
+      "agents": [
+        "release-engineer"
+      ],
+      "triggers": "Anything going live (every app)",
+      "notes": "Base team"
+    },
+    "DOCS_HANDOVER": {
+      "agents": [
+        "documentation-engineer"
+      ],
+      "triggers": "Company rollout, another team will operate it",
+      "notes": "Go-live pack"
+    },
+    "SENSITIVE_DATA": {
+      "agents": [
+        "security-reviewer"
+      ],
+      "triggers": "Health, HR, finance, personal IDs, children, signatures",
+      "notes": "Retention + deletion page"
+    }
+  }
+}

@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# check — the quality gate for an app built from the factory template.
+#
+# Usage:
+#   scripts/check [--dir APP_DIR] [--build] [--db] [--e2e BASE_URL]
+#
+#   --dir   app directory (default: current directory)
+#   --build also run `next build`        (required before a release)
+#   --db    also run migrations + RLS on a throwaway local Postgres (npm run db:local-check)
+#   --e2e   also run the Playwright smoke suite against BASE_URL
+# Runs lint, typecheck and unit tests always. Prints PASS/FAIL per step; exits 1 if any step fails.
+set -euo pipefail
+# shellcheck source-path=SCRIPTDIR source=lib/common.sh
+source "$(dirname "$0")/lib/common.sh"
+
+dir="." build=0 db=0 e2e=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dir) dir="${2:-}"; shift 2 ;;
+    --build) build=1; shift ;;
+    --db) db=1; shift ;;
+    --e2e) e2e="${2:-}"; shift 2 ;;
+    -h | --help) usage_from_header "$0"; exit 0 ;;
+    *) die "Unknown option: $1 (see --help)" ;;
+  esac
+done
+need node npm
+[[ -f "$dir/package.json" ]] || die "$dir has no package.json."
+cd "$dir"
+[[ -d node_modules ]] || { info "Installing dependencies (npm ci)…"; npm ci --no-audit --no-fund >/dev/null; }
+
+log="$(mktemp)"
+trap 'rm -f "$log"' EXIT
+step() {
+  local label="$1"
+  shift
+  local started=$SECONDS
+  if "$@" >"$log" 2>&1; then
+    pass "$label ($((SECONDS - started))s)"
+  else
+    fail "$label"
+    tail -n 30 "$log" | sed 's/^/      /'
+  fi
+}
+
+step "lint" npm run --silent lint
+step "typecheck" npm run --silent typecheck
+step "unit tests" npm test --silent
+if [[ "$build" == "1" ]]; then step "build" npm run --silent build; fi
+if [[ "$db" == "1" ]]; then step "migrations + RLS (local Postgres)" npm run --silent db:local-check; fi
+if [[ -n "$e2e" ]]; then
+  chromium=""
+  [[ -x /opt/pw-browsers/chromium ]] && chromium=/opt/pw-browsers/chromium
+  step "e2e smoke ($e2e)" env E2E_BASE_URL="$e2e" E2E_CHROMIUM_PATH="${E2E_CHROMIUM_PATH:-$chromium}" npx playwright test
+fi
+
+if [[ "$FAILURES" -gt 0 ]]; then
+  info "check: $FAILURES step(s) failed."
+  exit 1
+fi
+info "check: all steps passed."

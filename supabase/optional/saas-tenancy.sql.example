@@ -1,0 +1,48 @@
+-- SaaS tenancy: people create their own workspace (organization) after signing up.
+-- The default template is "company" tenancy: one organization made by `npm run db:configure`,
+-- people join by invite. `scripts/bootstrap --saas` (or "tenancy": "saas" in the blueprint) installs
+-- this file as supabase/migrations/0003_workspaces.sql and sets APP_CONFIG.tenancy = "saas", which
+-- turns on /onboarding, POST /api/workspaces and "New workspace" in the switcher.
+-- scripts/check-rls.ts proves the rules below whenever this function exists.
+
+create or replace function create_organization(p_name text, p_timezone text default 'UTC', p_currency text default 'USD')
+returns uuid
+language plpgsql security definer set search_path = public as $$
+declare
+  caller auth.users;
+  clean  text := trim(coalesce(p_name, ''));
+  base   text;
+  org    uuid;
+begin
+  select * into caller from auth.users where id = auth.uid();
+  if caller.id is null or caller.email_confirmed_at is null then
+    raise exception 'Confirm your email address first.' using errcode = 'insufficient_privilege';
+  end if;
+  if length(clean) not between 2 and 80 then
+    raise exception 'Workspace names are 2 to 80 characters.' using errcode = 'check_violation';
+  end if;
+  if p_currency !~ '^[A-Z]{3}$' or not exists (select 1 from pg_timezone_names where name = p_timezone) then
+    raise exception 'Unknown timezone or currency.' using errcode = 'check_violation';
+  end if;
+  -- Abuse guard: a person can own at most 5 workspaces.
+  if (select count(*) from organization_members where profile_id = caller.id and role = 'admin') >= 5 then
+    raise exception 'You already have the maximum number of workspaces.' using errcode = 'check_violation';
+  end if;
+  -- Slug from the name (ASCII only) plus a random suffix, so two "Acme" workspaces never collide.
+  base := trim(both '-' from left(regexp_replace(lower(clean), '[^a-z0-9]+', '-', 'g'), 40));
+  if length(base) < 2 then base := 'workspace'; end if;
+  insert into profiles (id) values (caller.id) on conflict (id) do nothing;
+  insert into organizations (name, slug, timezone, currency)
+    values (clean, base || '-' || substr(md5(gen_random_uuid()::text), 1, 6), p_timezone, p_currency)
+    returning id into org;
+  insert into organization_members (organization_id, profile_id, role) values (org, caller.id, 'admin');
+  return org;
+end;
+$$;
+revoke execute on function create_organization(text, text, text) from public, anon;
+grant execute on function create_organization(text, text, text) to authenticated;
+
+-- Billing state gates writes, not reads: add `and workspace_active(organization_id)` to write policies.
+-- create or replace function workspace_active(org uuid) returns boolean language sql stable security definer
+--   set search_path = public as $$ select coalesce((select status in ('trialing','active') from subscriptions
+--   where organization_id = org), false) $$;

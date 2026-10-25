@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+# verify-production — prove a deployment works from the outside before anyone says "it's live".
+#
+# Usage:
+#   scripts/verify-production https://app.example.com [--www redirect|serve|skip] [--deep]
+#       [--public "/login,/privacy,/terms,/cookies,/data-deletion"] [--protected "/dashboard"] [--allow-http]
+#
+# Checks (each PASS/FAIL; exit 1 on any FAIL):
+#   HTTPS and a valid certificate · http:// redirects to https:// · www behaviour (default: redirect to apex)
+#   /api/health is 200 {"status":"ok"} (--deep also checks Supabase from the server)
+#   /manifest.webmanifest is valid with relative URLs and a maskable icon · /sw.js is served no-cache
+#   public pages answer 200 signed out · protected pages redirect to /login · security headers present
+# --allow-http is for local checks only (http://localhost:3000); never use it for production.
+# Exit codes: 0 all passed · 1 a check failed · 2 UNVERIFIED (could not reach the URL from here:
+# DNS, proxy or network). Unverified is not "down" and not "working": say so, and check from elsewhere.
+set -euo pipefail
+# shellcheck source-path=SCRIPTDIR source=lib/common.sh
+source "$(dirname "$0")/lib/common.sh"
+
+url="" www="redirect" deep=0 public="/login,/privacy,/terms,/cookies,/data-deletion" protected="/dashboard" allow_http=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --www) www="${2:-}"; shift 2 ;;
+    --deep) deep=1; shift ;;
+    --public) public="${2:-}"; shift 2 ;;
+    --protected) protected="${2:-}"; shift 2 ;;
+    --allow-http) allow_http=1; shift ;;
+    -h | --help) usage_from_header "$0"; exit 0 ;;
+    -*) die "Unknown option: $1 (see --help)" ;;
+    *) url="${1%/}"; shift ;;
+  esac
+done
+need curl node
+[[ -n "$url" ]] || die "Give the deployment URL, e.g. scripts/verify-production https://app.example.com"
+[[ "$www" =~ ^(redirect|serve|skip)$ ]] || die "--www must be redirect, serve or skip."
+if [[ "$url" != https://* && "$allow_http" != "1" ]]; then die "Production must be https:// (use --allow-http only for local checks)."; fi
+host="${url#*://}"
+host="${host%%/*}"
+CURL=(curl -sS --max-time 20 --retry 2 --retry-delay 2)
+
+body="$(mktemp)"
+headers="$(mktemp)"
+trap 'rm -f "$body" "$headers"' EXIT
+fetch() { # fetch PATH → sets code, location; body/headers in temp files (emptied first, never stale)
+  : >"$body"
+  : >"$headers"
+  code="$("${CURL[@]}" -o "$body" -D "$headers" -w '%{http_code}' "$url$1" 2>/dev/null || true)"
+  code="${code:-000}"
+  location="$(grep -i '^location:' "$headers" | tail -1 | cut -d' ' -f2- | tr -d '\r' || true)"
+}
+status_of() { # status_of URL → HTTP code, headers in $headers
+  : >"$headers"
+  local c
+  c="$("${CURL[@]}" -o /dev/null -D "$headers" -w '%{http_code}' "$1" 2>/dev/null || true)"
+  echo "${c:-000}"
+}
+header() { grep -i "^$1:" "$headers" | tail -1 | cut -d' ' -f2- | tr -d '\r' || true; }
+
+info "Verifying $url"
+
+# TLS + reachability. A transport failure (000) means we couldn't verify anything from here.
+fetch "/"
+if [[ "$code" == "000" ]]; then
+  err="$("${CURL[@]}" -o /dev/null "$url/" 2>&1 >/dev/null | tail -1 || true)"
+  info "UNVERIFIED  could not reach $url from this machine: ${err:-no response}"
+  info "This proves nothing about the deployment. Check from another network (or the Vercel dashboard) before reporting status."
+  exit 2
+fi
+if [[ "$code" =~ ^(200|30[1278])$ ]]; then pass "reachable over ${url%%://*} with a valid certificate (/ → $code)"; else fail "/ answered $code (expected 200 or a redirect)"; fi
+started=$(date +%s%N)
+login_code="$(status_of "$url/login")"
+ms=$((($(date +%s%N) - started) / 1000000))
+if [[ "$login_code" != "200" ]]; then fail "/login → $login_code"
+elif [[ "$ms" -lt 3000 ]]; then pass "/login responded in ${ms}ms"
+else warn "/login took ${ms}ms (cold start or slow region?)"; fi
+
+if [[ "$url" == https://* ]]; then
+  http_code="$(status_of "http://$host/")"
+  http_loc="$(grep -i '^location:' "$headers" | tail -1 | cut -d' ' -f2- | tr -d '\r' || true)"
+  if [[ "$http_code" =~ ^30[1278]$ && "$http_loc" == https://* ]]; then pass "http:// redirects to https:// ($http_code)"; else fail "http://$host/ did not redirect to https (got $http_code ${http_loc:-no location})"; fi
+  fetch "/"
+  hsts="$(header strict-transport-security)"
+  if [[ -n "$hsts" ]]; then pass "HSTS header present"; else fail "no Strict-Transport-Security header"; fi
+fi
+
+# www behaviour (skip for preview URLs and subdomains).
+if [[ "$www" != "skip" && "$host" != www.* && "$host" != *.vercel.app && "$host" != localhost* && "$(tr -cd '.' <<<"$host" | wc -c)" -eq 1 ]]; then
+  w_code="$(status_of "https://www.$host/")"
+  w_loc="$(grep -i '^location:' "$headers" | tail -1 | cut -d' ' -f2- | tr -d '\r' || true)"
+  if [[ "$www" == "redirect" ]]; then
+    if [[ "$w_code" =~ ^30[1278]$ && "$w_loc" == "https://$host"* ]]; then pass "www.$host redirects to the apex"; else fail "www.$host should redirect to https://$host (got $w_code ${w_loc:-no location})"; fi
+  elif [[ "$w_code" =~ ^(200|30[1278])$ ]]; then pass "www.$host answers ($w_code)"; else fail "www.$host answered $w_code"; fi
+else
+  skip "www check (preview URL, subdomain or --www skip)"
+fi
+
+# Health.
+fetch "/api/health$([[ "$deep" == "1" ]] && echo '?deep=1')"
+status="$(node -e 'try{const j=JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"));console.log(j.status+(j.commit?" @"+j.commit:"")+(j.supabase?" supabase="+j.supabase:""))}catch{console.log("invalid-json")}' "$body")"
+if [[ "$code" == "200" && "$status" == ok* ]]; then pass "/api/health → $status"; else fail "/api/health → $code $status"; fi
+
+# Manifest.
+fetch "/manifest.webmanifest"
+manifest_check="$(node -e '
+const m = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"));
+const problems = [];
+if (!m.name || !m.short_name) problems.push("name/short_name missing");
+if (m.display !== "standalone") problems.push("display is not standalone");
+for (const u of [m.start_url, m.scope, ...(m.icons || []).map((i) => i.src)]) if (u && /^https?:/.test(u)) problems.push("absolute URL " + u);
+if (!(m.icons || []).some((i) => i.purpose === "maskable")) problems.push("no maskable icon");
+if (!(m.icons || []).some((i) => i.sizes === "512x512")) problems.push("no 512px icon");
+console.log(problems.join("; ") || "ok");
+' "$body" 2>/dev/null || echo "not valid JSON")"
+if [[ "$code" == "200" && "$manifest_check" == "ok" ]]; then pass "manifest valid (relative URLs, maskable + 512px icons)"; else fail "manifest: $code $manifest_check"; fi
+icon_type="$("${CURL[@]}" -o /dev/null -w '%{http_code} %{content_type}' "$url/icons/icon-192.png" 2>/dev/null || true)"
+if [[ "$icon_type" == "200 image/png"* ]]; then pass "icon served"; else fail "/icons/icon-192.png → $icon_type"; fi
+
+# Service worker.
+fetch "/sw.js"
+if [[ "$code" == "200" && "$(header cache-control)" == *no-cache* ]]; then pass "/sw.js served with no-cache (updates roll out)"; else fail "/sw.js → $code, Cache-Control: $(header cache-control)"; fi
+
+# Public and protected pages.
+IFS=',' read -r -a pages <<<"$public"
+for page in "${pages[@]}"; do
+  [[ -z "$page" ]] && continue
+  fetch "$page"
+  if [[ "$code" == "200" ]]; then pass "public $page → 200"; else fail "public $page → $code (must be reachable signed out)"; fi
+done
+IFS=',' read -r -a pages <<<"$protected"
+for page in "${pages[@]}"; do
+  [[ -z "$page" ]] && continue
+  fetch "$page"
+  if [[ "$code" =~ ^30[1278]$ && "$location" == *"/login"* ]]; then pass "protected $page → sign-in redirect"; else fail "protected $page → $code ${location:-} (expected a redirect to /login)"; fi
+done
+
+# Security headers.
+fetch "/login"
+if [[ "$(header x-content-type-options)" == *nosniff* ]]; then pass "X-Content-Type-Options: nosniff"; else fail "missing X-Content-Type-Options: nosniff"; fi
+if [[ -n "$(header x-powered-by)" ]]; then warn "X-Powered-By is exposed"; fi
+
+if [[ "$FAILURES" -gt 0 ]]; then
+  info "verify-production: $FAILURES check(s) failed for $url. Do not report this deployment as working."
+  exit 1
+fi
+info "verify-production: all checks passed for $url."

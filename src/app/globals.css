@@ -1,0 +1,341 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* `dark:` follows the class the theme script puts on <html> (src/lib/theme.ts), not the OS. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Neutral palette; color is reserved for meaning. Two themes:
+ *   :root  light (default)
+ *   .dark  dark (Settings → Profile → Appearance, or the device when set to System)
+ * Every color in the app comes from these tokens. Components use the semantic
+ * tokens (background, muted, border…) or the scales below, never raw hex.
+ */
+:root {
+  --radius: 0.5rem;
+  /* Phones get a bottom navigation bar (components/shell/bottom-nav.tsx). */
+  --bottom-nav-height: 0px;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.205 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.205 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.235 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.235 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.54 0 0);
+  --accent: oklch(0.965 0 0);
+  --accent-foreground: oklch(0.235 0 0);
+  --destructive: oklch(0.577 0.2 27.3);
+  /* Fill behind white text (destructive buttons, badges): stays dark enough for AA in both themes. */
+  --destructive-strong: oklch(0.577 0.2 27.3);
+  --border: oklch(0.925 0 0);
+  --input: oklch(0.905 0 0);
+  --ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.985 0.001 106);
+  --sidebar-foreground: oklch(0.32 0 0);
+  --sidebar-accent: oklch(0.945 0.001 106);
+  --sidebar-border: oklch(0.935 0.001 106);
+  --warning: oklch(0.56 0.15 45);
+  --danger: oklch(0.55 0.17 25);
+  /* Dimmed backdrop behind dialogs and sheets. */
+  --overlay: oklch(0 0 0 / 0.25);
+  --overlay-subtle: oklch(0 0 0 / 0.05);
+}
+
+/*
+ * Dark: a near-black ink (#0C0E15, also the splash and status-bar color) with a cool,
+ * low-chroma neutral ramp. Contrast is checked for AA: body text ≥ 13:1,
+ * muted text ≥ 6:1 on background and on muted surfaces, status ink ≥ 6:1 on its pill.
+ */
+.dark {
+  --background: #0c0e15; /* = THEME_COLORS.dark (src/lib/theme.ts) */
+  --foreground: oklch(0.94 0.004 275);
+  --card: oklch(0.2 0.012 275);
+  --card-foreground: oklch(0.94 0.004 275);
+  --popover: oklch(0.215 0.012 275);
+  --popover-foreground: oklch(0.94 0.004 275);
+  --primary: oklch(0.93 0.004 275);
+  --primary-foreground: oklch(0.2 0.012 275);
+  --secondary: oklch(0.26 0.01 275);
+  --secondary-foreground: oklch(0.93 0.004 275);
+  --muted: oklch(0.235 0.01 275);
+  --muted-foreground: oklch(0.71 0.01 275);
+  --accent: oklch(0.255 0.01 275);
+  --accent-foreground: oklch(0.94 0.004 275);
+  --destructive: oklch(0.68 0.19 25);
+  --destructive-strong: oklch(0.54 0.19 25);
+  --border: oklch(0.275 0.01 275);
+  --input: oklch(0.32 0.01 275);
+  --ring: oklch(0.56 0.01 275);
+  --sidebar: oklch(0.155 0.012 275);
+  --sidebar-foreground: oklch(0.8 0.006 275);
+  --sidebar-accent: oklch(0.245 0.01 275);
+  --sidebar-border: oklch(0.245 0.01 275);
+  --warning: oklch(0.78 0.14 65);
+  --danger: oklch(0.72 0.17 25);
+  --overlay: oklch(0 0 0 / 0.55);
+  --overlay-subtle: oklch(0 0 0 / 0.4);
+
+  /*
+   * Scales flip in dark, Radix-style: step 50 is always the faintest tint of a
+   * surface and 700–900 the strongest ink, so `bg-red-50 text-red-700` (a status
+   * pill) or `border-neutral-100` (a row divider) reads right in both themes.
+   */
+  --color-neutral-50: oklch(0.205 0.01 275);
+  --color-neutral-100: oklch(0.235 0.01 275);
+  --color-neutral-200: oklch(0.29 0.01 275);
+  --color-neutral-300: oklch(0.37 0.01 275);
+  --color-neutral-400: oklch(0.5 0.01 275);
+  --color-neutral-500: oklch(0.63 0.01 275);
+  --color-neutral-600: oklch(0.73 0.008 275);
+  --color-neutral-700: oklch(0.81 0.006 275);
+  --color-neutral-800: oklch(0.88 0.005 275);
+  --color-neutral-900: oklch(0.93 0.004 275);
+  --color-neutral-950: oklch(0.96 0.003 275);
+
+  --color-red-50: oklch(0.25 0.05 22);
+  --color-red-100: oklch(0.29 0.07 22);
+  --color-red-200: oklch(0.35 0.09 22);
+  --color-red-300: oklch(0.44 0.12 22);
+  --color-red-400: oklch(0.58 0.16 22);
+  --color-red-500: oklch(0.64 0.19 22);
+  --color-red-600: oklch(0.7 0.17 22);
+  --color-red-700: oklch(0.78 0.13 22);
+  --color-red-800: oklch(0.84 0.1 22);
+  --color-red-900: oklch(0.9 0.06 22);
+
+  --color-amber-50: oklch(0.26 0.045 75);
+  --color-amber-100: oklch(0.3 0.06 75);
+  --color-amber-200: oklch(0.37 0.08 75);
+  --color-amber-300: oklch(0.47 0.1 75);
+  --color-amber-400: oklch(0.65 0.14 75);
+  --color-amber-500: oklch(0.74 0.15 75);
+  --color-amber-600: oklch(0.79 0.14 75);
+  --color-amber-700: oklch(0.83 0.12 80);
+  --color-amber-800: oklch(0.87 0.1 82);
+  --color-amber-900: oklch(0.92 0.07 85);
+
+  --color-emerald-50: oklch(0.25 0.04 165);
+  --color-emerald-100: oklch(0.29 0.055 165);
+  --color-emerald-200: oklch(0.35 0.07 165);
+  --color-emerald-300: oklch(0.45 0.09 165);
+  --color-emerald-400: oklch(0.6 0.12 165);
+  --color-emerald-500: oklch(0.68 0.14 165);
+  --color-emerald-600: oklch(0.74 0.13 165);
+  --color-emerald-700: oklch(0.8 0.11 165);
+  --color-emerald-800: oklch(0.86 0.08 165);
+  --color-emerald-900: oklch(0.91 0.05 165);
+
+  --color-blue-50: oklch(0.25 0.05 260);
+  --color-blue-100: oklch(0.29 0.07 260);
+  --color-blue-200: oklch(0.35 0.09 260);
+  --color-blue-300: oklch(0.44 0.12 260);
+  --color-blue-400: oklch(0.58 0.15 260);
+  --color-blue-500: oklch(0.65 0.16 260);
+  /* Unread dots and badges (white text): keep a mid blue. */
+  --color-blue-600: oklch(0.6 0.18 260);
+  --color-blue-700: oklch(0.79 0.11 260);
+  --color-blue-800: oklch(0.85 0.08 260);
+  --color-blue-900: oklch(0.9 0.05 260);
+
+  --color-violet-50: oklch(0.25 0.05 293);
+  --color-violet-100: oklch(0.29 0.07 293);
+  --color-violet-200: oklch(0.35 0.09 293);
+  --color-violet-300: oklch(0.44 0.12 293);
+  --color-violet-400: oklch(0.58 0.15 293);
+  --color-violet-500: oklch(0.66 0.16 293);
+  --color-violet-600: oklch(0.72 0.14 293);
+  --color-violet-700: oklch(0.8 0.11 293);
+  --color-violet-800: oklch(0.86 0.08 293);
+  --color-violet-900: oklch(0.91 0.05 293);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --bottom-nav-height: 3.5rem;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-overlay: var(--overlay);
+  --color-overlay-subtle: var(--overlay-subtle);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/* Safe areas (notch, home indicator, rounded corners) for the installed app; 0 elsewhere. */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@utility pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+@utility pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+@utility px-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-feature-settings: "cv11", "ss01";
+    /* No font inflation on rotate; no grey flash on tap (components draw their own :active state). */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html,
+  body {
+    /* The shell owns scrolling: pulling past the edge mustn't bounce or refresh the whole app. */
+    overscroll-behavior: none;
+  }
+  body {
+    @apply bg-background text-foreground font-sans text-[13px] leading-5;
+  }
+  /* Scroll areas inside the shell keep their overscroll to themselves. */
+  main,
+  [data-scroll-area] {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+}
+
+/*
+ * Phones: form fields at 16px or larger, so iOS never zooms into a focused field.
+ * Unlayered on purpose, so it wins over size utilities on any input.
+ */
+@media (max-width: 767px) {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]),
+  textarea,
+  select {
+    /* !important: beats the phone type scale below, which is plain class rules. */
+    font-size: max(16px, 1em) !important;
+  }
+}
+
+/*
+ * Phones: a larger type scale, so everything reads at arm's length. Desktop keeps
+ * its dense 13px. Theme sizes (text-xs/sm/base/lg) step up through their variables;
+ * the fixed pixel sizes used across the app step up here. The bottom bar's 10.5px
+ * labels are left alone (five tabs share 360px). Unlayered, so it wins on phones.
+ */
+@media (max-width: 767px) {
+  :root {
+    --text-xs: 0.875rem; /* 12 → 14px */
+    --text-sm: 0.9375rem; /* 14 → 15px */
+    --text-base: 1.0625rem; /* 16 → 17px */
+    --text-lg: 1.25rem; /* 18 → 20px */
+    --muted-foreground: oklch(0.47 0 0);
+  }
+  .dark {
+    --muted-foreground: oklch(0.76 0.01 275);
+  }
+  body,
+  .text-\[13px\],
+  .text-\[14px\] {
+    font-size: 15px;
+  }
+  .text-\[11px\],
+  .text-\[11\.5px\],
+  .text-\[12px\] {
+    font-size: 13px;
+  }
+  .text-\[9px\],
+  .text-\[9\.5px\],
+  .text-\[10px\] {
+    font-size: 11px;
+  }
+  .text-\[15px\] {
+    font-size: 19px;
+  }
+  .text-\[17px\] {
+    font-size: 20px;
+  }
+  .text-\[20px\],
+  .text-\[22px\] {
+    font-size: 26px;
+    line-height: 1.2;
+  }
+}
+
+/*
+ * Touch screens: every button's hit area is at least 44×44px, without changing how
+ * it looks. In the base layer so a utility like `absolute` still positions the button.
+ */
+@layer base {
+  @media (pointer: coarse) {
+    [data-slot="button"],
+    [data-touch-target] {
+      position: relative;
+    }
+    [data-slot="button"]::after,
+    [data-touch-target]::after {
+      content: "";
+      position: absolute;
+      inset: min(0px, calc((100% - 44px) / 2));
+    }
+  }
+}
+
+/* Theme changes swap every color at once instead of animating each transition. */
+.theme-switching,
+.theme-switching * {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

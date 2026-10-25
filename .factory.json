@@ -1,0 +1,8 @@
+{
+  "factory": "bill-app-factory",
+  "factoryCommit": "9cb65d9",
+  "template": "nextjs-supabase",
+  "name": "SHIFTY",
+  "slug": "shifty",
+  "createdAt": "2026-10-25T16:27:31Z"
+}
