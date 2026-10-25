@@ -4,7 +4,7 @@
 | --- | --- |
 | AGENT | frontend-engineer |
 | TASK | SHIFTY Sessions lane: history list, session detail (unified timeline, day contributions, location, audit), edit times, manual entry, trash, rezone |
-| COMMIT | see `git log lane/sessions` (feat(sessions): …) |
+| COMMIT | `441486d` feat(sessions): history list, session detail, edit times, manual entry, trash (+ this handoff fix-up) |
 
 ## FILES CHANGED
 | Area | Files |
