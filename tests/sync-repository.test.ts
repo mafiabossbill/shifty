@@ -211,3 +211,13 @@ describe("account export: SHIFTY data", () => {
     expect(data).toMatchObject({ settings: { updatedAt: 3 }, projects: [], ledger: [], events_committed: 1 });
   });
 });
+
+describe("load_shift_state shape", () => {
+  it("reads the documented { sessions: { id: session } } map and a bare array", async () => {
+    const { sessionsFromLoad } = await import("@/lib/data/shifts");
+    const s = { id: "a" } as never;
+    expect(sessionsFromLoad({ sessions: { a: s } })).toEqual([s]);
+    expect(sessionsFromLoad([s])).toEqual([s]);
+    expect(sessionsFromLoad(null)).toEqual([]);
+  });
+});

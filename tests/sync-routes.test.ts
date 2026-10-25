@@ -37,17 +37,6 @@ vi.mock("@/lib/data/shifts", async (importOriginal) => ({
   shiftRepositoryFor: () => mocks.repo,
 }));
 
-// "shift:track" (admin + member, blueprint roles) lands in permissions.ts with the database lane's migration;
-// until then the map is extended here so these tests exercise the sync routes, not the merge order.
-vi.mock("@/lib/permissions", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/permissions")>();
-  const withTrack = (role: "admin" | "member") =>
-    (actual.ROLE_CAPABILITIES[role] as readonly string[]).includes("shift:track")
-      ? actual.ROLE_CAPABILITIES[role]
-      : [...actual.ROLE_CAPABILITIES[role], "shift:track"];
-  return { ...actual, ROLE_CAPABILITIES: { ...actual.ROLE_CAPABILITIES, admin: withTrack("admin"), member: withTrack("member") } };
-});
-
 const { GET: status } = await import("@/app/api/sync/status/route");
 const { GET: getState } = await import("@/app/api/sync/state/route");
 const { POST: pushRoute } = await import("@/app/api/sync/events/route");

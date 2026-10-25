@@ -77,10 +77,20 @@ export function lwwAccepts(incomingUpdatedAt: number, storedUpdatedAt: number | 
 }
 
 /** Maps a Postgres error from commit_shift_event() to an outcome (the contract in the sync handoff). */
+/** load_shift_state() returns `{ sessions: { [id]: ShiftSession } }` (docs/SCHEMA.md); tolerate a bare array. */
+export function sessionsFromLoad(data: unknown): ShiftSession[] {
+  if (Array.isArray(data)) return data as ShiftSession[];
+  const map = (data as { sessions?: Record<string, ShiftSession> } | null)?.sessions;
+  return map && typeof map === "object" ? Object.values(map) : [];
+}
+
 export function commitOutcomeFor(error: Pick<PostgrestError, "code" | "message">): CommitOutcome {
   switch (error.code) {
     case "40001":
+    case "P0002": // session_not_found: reload; the reducer then answers not_found
       return { status: "revision_conflict" };
+    case "23503":
+      return { status: "chronology", message: "That project hasn't synced yet. Try again in a moment." };
     case "23505":
       return { status: "unique_violation" };
     case "23P01":
@@ -151,7 +161,7 @@ export class SupabaseShiftRepository implements ShiftRepository {
   async loadSessions(): Promise<ShiftSession[]> {
     const { data, error } = await this.supabase.rpc(SHIFT_RPC.load);
     if (error) fail("load your sessions", error);
-    return Array.isArray(data) ? (data as ShiftSession[]) : [];
+    return sessionsFromLoad(data);
   }
 
   async committedEventIds(ids: readonly string[]): Promise<Set<string>> {

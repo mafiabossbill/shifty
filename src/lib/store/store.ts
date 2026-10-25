@@ -640,11 +640,12 @@ export class ShiftStore {
       }
       this.mode = "account";
       this.setPhase("syncing");
-      await this.pushEvents(transport);
+      // Profile first: sessions may name a project that must exist on the server.
       if (this.meta.profileDirty) {
         await transport.putProfile({ ...this.profile });
         this.meta = { ...this.meta, profileDirty: false };
       }
+      await this.pushEvents(transport);
       const state = await transport.pull();
       this.base = { sessions: Object.fromEntries(state.sessions.map((s) => [s.id, s])) };
       const merged = mergeProfile(this.profile, state.profile);

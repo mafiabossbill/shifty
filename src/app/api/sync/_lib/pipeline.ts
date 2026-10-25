@@ -6,7 +6,7 @@ import { jsonError } from "@/lib/api";
 import { apiSession, type Session } from "@/lib/current-user";
 import { shiftRepositoryFor, type ShiftRepository } from "@/lib/data/shifts";
 import { logEvent } from "@/lib/log";
-import { ROLE_CAPABILITIES, type Role } from "@/lib/permissions";
+import { can, type Role } from "@/lib/permissions";
 import { supabaseConfigured } from "@/lib/supabase/env";
 
 export const NOT_CONFIGURED = "Sync isn't set up yet: set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.";
@@ -15,10 +15,8 @@ export const NOT_CONFIGURED = "Sync isn't set up yet: set NEXT_PUBLIC_SUPABASE_U
  * The capability every sync route needs (admin + member, blueprint roles). Referenced in this one place
  * until the database lane adds it to src/lib/permissions.ts; then this becomes `can(user, "shift:track")`.
  */
-export const SHIFT_TRACK = "shift:track";
-
 export function canTrackShifts(user: { role: Role }): boolean {
-  return (ROLE_CAPABILITIES[user.role] as readonly string[]).includes(SHIFT_TRACK);
+  return can(user, "shift:track");
 }
 
 /** Sync answers are per person and per moment: never cached anywhere. */

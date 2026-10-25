@@ -202,16 +202,16 @@ export function applyEvent(state: ShiftState, event: ShiftEvent): ApplyResult {
     case "break_end": {
       const open = session.breaks.find((b) => b.id === event.breakId);
       if (!open || open.endedAt !== null) return fail("invalid_state", "That break isn't running.");
-      if (event.at < open.startedAt) return fail("chronology", "A break can't end before it starts.");
+      if (event.at <= open.startedAt) return fail("chronology", "A break must end after it starts.");
       const breaks = session.breaks.map((b) => (b.id === open.id ? { ...b, endedAt: event.at } : b));
       return put(state, touch(session, event, { breaks }));
     }
     case "clock_out": {
       if (status === "completed") return fail("invalid_state", "This session has already finished.");
-      if (event.at < session.startedAt) return fail("chronology", "Clock-out can't be before clock-in.");
+      if (event.at <= session.startedAt) return fail("chronology", "Clock-out must be after clock-in.");
       const closedEnd = Math.max(...session.breaks.map((b) => b.endedAt ?? 0), 0);
       const open = session.breaks.find((b) => b.endedAt === null);
-      if (event.at < closedEnd || (open && event.at < open.startedAt)) return fail("chronology", "Clock-out can't be before a break ended.");
+      if (event.at < closedEnd || (open && event.at <= open.startedAt)) return fail("chronology", "Clock-out can't be before a break ended.");
       // An open break closes at the clock-out instant, as its own explicit part of this event.
       const breaks = session.breaks.map((b) => (b.endedAt === null ? { ...b, endedAt: event.at } : b));
       return put(state, touch(session, event, { endedAt: event.at, endTimeZone: event.deviceTimeZone, breaks }));
