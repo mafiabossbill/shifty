@@ -1,6 +1,6 @@
 # SHIFTY schema
 
-Database contract for SHIFTY's sessions and profile data. Migrations `0100`–`0104` (database-engineer range
+Database contract for SHIFTY's sessions and profile data. Migrations `0100`–`0105` (database-engineer range
 0100–0199) build on the template foundation `0001`–`0004`. The domain types are in
 [src/lib/shifts/types.ts](../src/lib/shifts/types.ts) and [src/lib/shifts/profile.ts](../src/lib/shifts/profile.ts);
 the database stores them as they are.
@@ -12,15 +12,18 @@ the database stores them as they are.
 | `0102_shift_sessions.sql` | Enums, ms ↔ timestamptz helpers, `shift_sessions`, `shift_breaks`, `location_snapshots`, `session_revisions`, `shift_events`, rule constraints |
 | `0103_shift_functions.sql` | `commit_shift_event`, `load_shift_state`, `load_shift_session`, `shift_session_json`, `delete_location_fixes`, `redact_location_events`, `shift_organization_id` |
 | `0104_shift_account.sql` | `load_profile_state`, `export_my_shift_data` (account export); account deletion documented (cascade) |
+| `0105_shift_security.sql` | Security review fixes: ownership-only SELECT/DELETE, purge tombstones, `import_session`, uuid fix-id matching, foreign event id → 23505, size caps, `search_path = ''` on redaction |
 
 ## Privacy and tenancy
 | Rule | How |
 | --- | --- |
-| A person sees only their own tracking. Admins don't see anyone else's either. | Every policy on every SHIFTY table is `user_id = (select auth.uid()) and organization_id in (select my_organization_ids()) and has_capability(organization_id, 'shift:track')` |
+| A person sees only their own tracking. Admins don't see anyone else's either. | SELECT and DELETE policies: `user_id = (select auth.uid())` only, so someone demoted or deactivated still sees, exports and deletes their own data (0105). INSERT and UPDATE policies: `user_id = (select auth.uid()) and organization_id in (select my_organization_ids()) and has_capability(organization_id, 'shift:track')`. `commit_shift_event` also requires `shift:track` |
 | Only admin and member roles track shifts | `shift:track` in `src/lib/permissions.ts` and `private.role_capabilities()` (`tests/permissions.test.ts` compares the two) |
 | Rows can't cross people or organizations | Children use the composite FK `(organization_id, user_id, session_id) → shift_sessions (organization_id, user_id, id)`; sessions name projects through `(organization_id, user_id, project_id) → work_projects` |
 | No admin-readable copy of tracking data | No `audit_logs` trigger on SHIFTY tables (`audit_logs` can be read with `audit:view`). History lives in `session_revisions` and `shift_events`, which only the owner can read |
 | Append-only for the owner | `shift_events`, `reward_ledger_entries`, `session_revisions`, `user_achievements`: select + insert policies only. Rows go with their session (purge) or account |
+| "Delete forever" leaves nothing readable | Deleting a session row (purge RPC or direct DELETE) fires `shift_sessions_tombstone_events`. Its events keep only `{id, type, sessionId, at}` in the payload and gain the flag `purged`; titles, notes, tags, pay, mood, times and locations are gone. Skipped during account or workspace deletion, because the events are deleted in the same statement |
+| Size caps on what owners write directly | `user_settings.settings`, `companion_states.state` and `session_revisions.previous` / `updated` ≤ 64 kB each; `shift_events.payload` ≤ 256 kB; `shift_events.flags` ≤ 16 (all via `octet_length(x::text)`) |
 | The organization never comes from the payload | `commit_shift_event` uses `shift_organization_id()` (the caller's earliest active membership with `shift:track`) and `auth.uid()` |
 
 ## Instants
@@ -52,7 +55,7 @@ and RLS turned on in the migration that creates it.
 | `shift_breaks` | `id` | ShiftBreak | `kind shift_break_kind`; `shift_breaks_chronology`; `shift_breaks_no_overlap` EXCLUDE gist `(session_id =, tstzrange(started_at, coalesce(ended_at, infinity), '[)') &&)` deferrable; constraint triggers `shift_breaks_within_session` / `shift_sessions_breaks_within` (deferrable) | `(session_id, started_at)`, `(user_id)` |
 | `location_snapshots` | `id` | LocationFix | `event location_event_kind`, `status location_status`; `location_snapshots_coordinates`: `captured` ⇔ latitude and longitude set; lat −90…90, lng −180…180, `accuracy_m ≥ 0`, `place_label` ≤80 | `(session_id, requested_at)`, `(user_id, requested_at desc)` |
 | `session_revisions` | `id` (= correcting event id) | SessionRevision | `edited_at` (= `at`), `reason` 3…500 after trim, `previous` / `updated` jsonb TimeSnapshot stored as sent | `(session_id, edited_at)`, `(user_id)` |
-| `shift_events` | `id` (= device event id) | ShiftEvent | `session_id` **no FK** (a purged session keeps its events), `type` ∈ the 13 event types, `happened_at` (= `at`), `recorded_at` (= `recordedAt`), `received_at default now()`, `device_time_zone`, `payload` (the event as sent), `flags` | `(user_id, recorded_at desc)`, `(session_id, recorded_at)` |
+| `shift_events` | `id` (= device event id) | ShiftEvent | `session_id` **no FK** (a purged session keeps its events), `type` ∈ the 14 event types (incl. `import_session`, 0105), `happened_at` (= `at`), `recorded_at` (= `recordedAt`), `received_at default now()`, `device_time_zone`, `payload` (the event as sent), `flags` | `(user_id, recorded_at desc)`, `(session_id, recorded_at)` |
 | `work_projects` | `id`; unique `(organization_id, user_id, id)` | Project | `name` 1…60, `color` ∈ palette, `archived`, `updated_ms` | `(user_id, archived, name)` |
 | `saved_places` | `id` | Place | `label` 1…40, lat/lng ranges, `radius_m` 25…5000, `updated_ms` | `(user_id, label)` |
 | `user_settings` | `user_id` | Settings | `settings` jsonb object (Zod-validated in the API), `updated_ms` | PK |
@@ -73,8 +76,8 @@ WHERE clause is limited to `auth.uid()`.
 Runs in one transaction:
 1. Caller: `auth.uid()` (42501 if signed out); organization: `shift_organization_id()` (42501 if the caller lacks `shift:track`).
 2. Checks that `p_event.sessionId` and `p_session.id` equal `p_session_id` (22023 otherwise).
-3. `insert into shift_events … on conflict (id) do nothing`. If the event id is already stored, it returns `{"status":"duplicate"}` and changes nothing.
-4. `p_session` null (SQL or JSON null) means **purge**: the session row is deleted, and its breaks, locations and revisions cascade. If `p_expected_revision > 0` and the stored revision differs: 40001. Coordinates in that session's `location` events are redacted.
+3. `insert into shift_events … on conflict (id) do nothing`. If the caller already stored this event id, it returns `{"status":"duplicate"}` and changes nothing. If someone else holds that id, it raises 23505 `shift_events_pkey` (`event_id_taken`), never `duplicate` (0105).
+4. `p_session` null (SQL or JSON null) means **purge**: the session row is deleted, and its breaks, locations and revisions cascade. If `p_expected_revision > 0` and the stored revision differs: 40001. The session's events, the purge event included, become tombstones (trigger, 0105).
 5. `p_expected_revision = 0` means **insert** (a reused id fails with 23505 `shift_sessions_pkey`). Otherwise it is an **update** `where id = p_session_id and user_id = auth.uid() and revision = p_expected_revision`. `p_session.revision` must be `expected` or `expected + 1` (22023). With 0 rows updated: the session exists → 40001 `revision_conflict`; it doesn't exist or isn't visible → P0002 `session_not_found`.
 6. Children are synced to `p_session`: breaks and locations not present are deleted, changed ones updated, new ones inserted. Removed fixes are redacted in the event log. Revisions not yet stored are inserted (append-only).
 7. `set constraints … immediate`: the overlap and within-session checks run here, at the end, so one correction can move or swap several breaks.
@@ -87,7 +90,7 @@ updatedAt`. The stored `organization_id` / `user_id` never come from the payload
 
 ### `load_shift_state() returns jsonb`
 Returns the caller's ShiftState, trash included: `{"sessions": {"<id>": ShiftSession, …}}` (`{"sessions": {}}` when
-empty). `JSON.parse` of it deep-equals the reducer's state; the live check compares the two after a 22-event fixture.
+empty). `JSON.parse` of it deep-equals the reducer's state; the live check compares the two after a 24-event fixture.
 
 ### `load_shift_session(p_session_id uuid) returns jsonb`
 Returns one ShiftSession, or null if it doesn't exist or isn't the caller's.
@@ -119,14 +122,17 @@ gets a 40001 and reloads instead of sending the fixes again. It also redacts the
 `location` events.
 
 ### `redact_location_events(p_session_id uuid default null, p_fix_ids uuid[] default null) returns integer`
-For the caller's own `location` events, sets `payload.fix.latitude/longitude/accuracyM/placeLabel` to null and adds
-the flag `location_redacted`. `commit_shift_event` and `delete_location_fixes` call it; it is harmless to call
-directly.
+Works on the caller's own events, scoped by session and/or fix ids; null means all. Fix ids are compared as uuid; a
+malformed id in a payload never matches and never raises. In `location` events it sets
+`payload.fix.latitude/longitude/accuracyM/placeLabel` to null. In `import_session` events it does the same for the
+matching entries of `payload.session.locations[]`. Changed rows gain the flag `location_redacted`. It is
+`security definer` with `search_path = ''`. `commit_shift_event` calls it for removed fixes and
+`delete_location_fixes` for all fixes; it is harmless to call directly.
 
 ### `load_profile_state() returns jsonb` · `export_my_shift_data() returns jsonb`
 `load_profile_state()` returns the ProfileState shape: `{settings|null, projects[], places[], activities[],
 companion|null, ledger[], achievements[]}`, with the camelCase keys from `profile.ts`.
-`export_my_shift_data()` returns `{sessions: ShiftSession[] (oldest first), events: [{id, type, sessionId, at,
+`export_my_shift_data()` returns the person's rows whatever their role or membership (ownership-only SELECT, 0105): `{sessions: ShiftSession[] (oldest first), events: [{id, type, sessionId, at,
 recordedAt, receivedAt, deviceTimeZone, flags, payload}], profile: load_profile_state()}`.
 
 ## Error codes (for the API's mapping)
@@ -134,6 +140,7 @@ recordedAt, receivedAt, deviceTimeZone, flags, payload}], profile: load_profile_
 | --- | --- | --- | --- |
 | `23505` + `shift_sessions_one_active_idx` in the message and constraint | insert / restore | A session is already running | 409 "A session is already running." |
 | `23505` + `shift_sessions_pkey` / `shift_breaks_pkey` / `location_snapshots_pkey` | insert | Id reused (another device created it, or a bug) | 409 |
+| `23505` + `shift_events_pkey` (`event_id_taken`) | event insert | The event id belongs to someone else | 409 |
 | `40001` `revision_conflict` | update / purge | Stored revision ≠ expected | 409: reload, re-run the reducer |
 | `P0002` `session_not_found` | update | No such session for this person | 404 |
 | `23P01` `shift_breaks_no_overlap` | end of commit | Two breaks of one session overlap | 400/409 chronology |
@@ -144,7 +151,8 @@ recordedAt, receivedAt, deviceTimeZone, flags, payload}], profile: load_profile_
 | `23514` (other CHECKs) | write | Goal, rating, currency, length limits | 400 |
 | `23503` `shift_sessions_project_fk` | write | `projectId` isn't one of this person's projects (sync projects first) | 409 |
 | `22023` | commit | Ids don't match, revision didn't advance by 0/1, malformed arguments | 400 |
-| `42501` | commit | Signed out, or no `shift:track` in any workspace | 401 / 403 |
+| `23514` `user_settings_settings_size` / `companion_states_state_size` / `shift_events_payload_size` / `shift_events_flags_size` / `session_revisions_snapshot_size` | write | Document too large | 413 / 400 |
+| `42501` | commit | Signed out, or no `shift:track` in any workspace (a demoted person can still read and delete) | 401 / 403 |
 
 ## Account deletion and export
 - **Deletion**: `delete_own_account()` (0004) is unchanged. It deletes `auth.users` → `profiles`, and every SHIFTY
@@ -155,7 +163,8 @@ recordedAt, receivedAt, deviceTimeZone, flags, payload}], profile: load_profile_
 
 ## Proof
 `npm run db:local-check` (local Postgres 16) and `npm run db:check-rls` (live project) run `scripts/check-rls.ts`.
-The SHIFTY section builds 22 events with the real reducer (`supabase/local/shift-fixture.ts`) and commits each one.
-It then checks every row in the error table, isolation from a peer, a same-org admin, an outsider, a viewer and
+The SHIFTY section builds 24 events with the real reducer (`supabase/local/shift-fixture.ts`) and commits each one.
+It then checks every row in the error table, purge tombstones (via RPC and direct DELETE), import redaction,
+size caps, a demoted and a deactivated owner still reading, exporting and deleting their own data, isolation from a peer, a same-org admin, an outsider, a viewer and
 anon, the append-only tables, ledger key uniqueness, location redaction, the ms round trip, and account-deletion
 cascade. Finally it deep-compares `load_shift_state()` / `load_profile_state()` with the reducer's output.
