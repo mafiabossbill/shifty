@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { firstIssue, jsonError, readJson } from "@/lib/api";
 import { ACTIVE_ORG_COOKIE, apiSignedIn } from "@/lib/current-user";
 import { deletionImpact } from "@/lib/data/account";
+import { refuseUnsafeRequest } from "@/app/api/sync/_lib/pipeline";
 import { logEvent } from "@/lib/log";
 import { supabaseConfigured } from "@/lib/supabase/env";
 import { accountDeleteSchema } from "@/lib/validation";
@@ -22,6 +23,8 @@ export async function GET() {
  * email must match; refused while they're the last admin of a workspace others still use). Signs out.
  */
 export async function DELETE(request: Request) {
+  const refused = refuseUnsafeRequest(request);
+  if (refused) return refused;
   if (!supabaseConfigured()) return jsonError(503, NO_ACCOUNTS);
   const { user, supabase, response } = await apiSignedIn();
   if (!user) return response;
