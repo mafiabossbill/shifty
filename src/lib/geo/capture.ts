@@ -60,7 +60,7 @@ export async function captureLocation(opts: CaptureOptions): Promise<CaptureResu
 
 export const LOCATION_STATUS_COPY: Record<LocationStatus, string> = {
   captured: "Location captured",
-  denied: "Location not captured — permission was denied. You can allow it in your browser settings and retry.",
+  denied: "Location not captured — permission was denied. You can allow location for SHIFTY in your browser settings.",
   unavailable: "Location not captured — your device couldn't get a position.",
   timeout: "Location not captured — it took too long. Try again outdoors or near a window.",
   unsupported: "Location not captured — this browser can't share location.",

@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
-import { HistoryIcon } from "lucide-react";
+import { Suspense } from "react";
 
-import { Page, PageHeader } from "@/components/shell/page";
-import { EmptyState } from "@/components/ui/empty-state";
+import { ListSkeleton, SessionsScreen } from "@/components/sessions/sessions-screen";
 
 export const metadata: Metadata = { title: "Sessions" };
 
-/** Placeholder: the Sessions lane replaces this body with the history timeline. */
+/** Static shell; the list reads the URL query and this device's store (works offline). */
 export default function SessionsPage() {
   return (
-    <Page>
-      <PageHeader title="Sessions" />
-      <EmptyState icon={<HistoryIcon />} title="Every shift you finish is listed here, newest first." />
-    </Page>
+    <Suspense fallback={<ListSkeleton />}>
+      <SessionsScreen />
+    </Suspense>
   );
 }
