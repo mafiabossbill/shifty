@@ -72,3 +72,48 @@ NEXT AGENT ACTION:
 - security-reviewer: review the sync API and the device-mode public shell.
 
 COMMIT: 9189c42 on lane/sync (handoff in the following docs commit; not pushed)
+
+### 2026-10-25 backend-engineer — SYNC security review fixes (L4, L5, L6, N3)
+AGENT: backend-engineer
+TASK: SYNC-SEC: security review findings L4, L5, L6, N3 (after merging `claude/relaxed-davinci-y8k5u9`, a fast-forward)
+FILES CHANGED:
+- `src/app/api/sync/_lib/pipeline.ts`, `src/app/api/sync/_lib/push.ts`, `src/app/api/sync/{events,profile}/route.ts`
+- `next.config.ts`, `public/sw.js`
+- `src/lib/zod-setup.ts` (new)
+- `src/lib/shifts/profile.ts`, `src/lib/shifts/schema.ts`: one import line each; outside my lane, see decisions
+- `tests/sync-routes.test.ts`, `tests/sync-csp.test.ts` (new), `tests/sync-sw.test.ts` (new)
+WHAT WAS IMPLEMENTED:
+- L4: a push batch may reload state at most `MAX_RELOADS_PER_BATCH` = 5 times. A reload happens on a 40001 retry, an RPC duplicate or a 23505. Once the budget is spent, the event that needed another reload and every later event get `rejected server` "Too many conflicts in one sync, try again." They stay on the device and retry on the next sync. The per-event retry limit (3) is unchanged.
+- L6: `refuseUnsafeRequest()` runs first in `syncSession(request)` for POST/PUT/PATCH/DELETE:
+  - `Sec-Fetch-Site: cross-site` → 403 "This request came from another site, so it was refused."
+  - Content-Type not `application/json` (parameters and case ignored; missing counts as not JSON) → 415 "Send the body as JSON (Content-Type: application/json)."
+  - same-origin, same-site, none or a missing Sec-Fetch-Site pass. GET is untouched.
+  - The device's `src/lib/sync/transport.ts` already sends `application/json`.
+- L5: the page CSP is exactly as specified. `'unsafe-eval'` is added only when `NODE_ENV=development`. `connect-src` adds the Supabase origin plus `wss://` (https URLs; `http`/`ws` only for a local project in development). `/sw.js` keeps its stricter `default-src 'self'; script-src 'self'`: its rule now comes after `/:path*`, so it wins.
+- N3: `safeNotificationPath()` in `sw.js` keeps only same-origin paths starting with `/`. It refuses `//…`, `/\…` and anything that resolves to another origin (e.g. `/\t/host`). It is applied to the push payload and again on notification click.
+IMPORTANT DECISIONS:
+- Zod 4 probes `new Function("")` on its first parse. The probe is caught, but under the new CSP the browser still reports `script-src eval`: one violation on every tracking page, seen in the Playwright run. Zod's documented fix is `z.config({ jitless: true })`; parsing results are identical. It lives in `src/lib/zod-setup.ts`, imported first by `src/lib/shifts/profile.ts` and `schema.ts`, the only modules that define Zod schemas used in the browser. Those files are outside my lane: the shifts owner should keep the import, or move it to a client entry they prefer. The only other option was `'unsafe-eval'` in production, which the review rejected.
+- The L6 guard runs before the 503/401 checks, so a cross-site write learns nothing about configuration or session.
+KNOWN RISKS:
+- `DELETE /api/account` (destructive) is not behind the L6 walls; the finding covered the sync pipeline only. Recommendation: call `refuseUnsafeRequest()` there too, and send JSON from the account test helper.
+- The CSP's Supabase origin is fixed at build time: setting `NEXT_PUBLIC_SUPABASE_URL` needs a redeploy, as before.
+- The browser check covered device mode only; signed-in pages with a real Supabase origin were not exercised.
+TESTS RUN:
+- `npm run lint`
+- `npm run typecheck`
+- `npx vitest run`
+- `npx next build` from a hard-linked copy, Supabase env unset
+- `next start` on :3918, then a Playwright Chromium script (`/opt/pw-browsers/chromium`) on `/`, `/sessions`, `/insights`, `/companion`, `/settings`, `/login`. It listened for `securitypolicyviolation` events and CSP console messages, and counted loaded fonts.
+- `curl` against the live server for the L6 walls
+TEST RESULTS:
+- lint and typecheck: clean.
+- vitest: 37 files, 343 tests passed.
+- Mutation checks: removing the reload cap fails the L4 test; removing the cross-site and content-type checks fails 2 L6 tests; restoring the old `sw.js` check fails the N3 test.
+- Build: OK.
+- Playwright, before the Zod fix: 5 pages each had one `script-src eval` violation from Zod's probe. After: zero violations and zero console errors on all 6 pages. next/font fonts loaded under `font-src 'self'` (3 faces, 2 on `/login`), and the service worker activated under `worker-src 'self'`.
+- Response headers: pages get the full CSP; `/sw.js` gets its own.
+- `curl`: cross-site POST → 403, same-origin POST → 503 (device mode, as expected), text/plain PUT → 415.
+NEXT AGENT ACTION:
+- shifts/domain owner: accept the `@/lib/zod-setup` import in `profile.ts`/`schema.ts`.
+- security-reviewer: re-check L4, L5, L6 and N3, and decide on L6 for `DELETE /api/account`.
+COMMIT: see the lane/sync log (`fix(sync): security review L4 L5 L6 N3`)

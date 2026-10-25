@@ -10,7 +10,7 @@ import { syncError, syncJson, syncSession } from "../_lib/pipeline";
  * session; any unknown field, user_id included, is refused.
  */
 export async function PUT(request: Request) {
-  const { session, repo, response } = await syncSession();
+  const { session, repo, response } = await syncSession(request);
   if (!session) return response;
   const parsed = profilePutSchema.safeParse(await readJson(request));
   if (!parsed.success) return syncError(400, firstIssue(parsed.error));

@@ -316,6 +316,20 @@ self.addEventListener("fetch", (event) => {
   // Everything else (RSC payloads, prefetches, other files) goes to the network untouched.
 });
 
+/**
+ * Where a notification may send the person: a same-origin path only. "//host" and "/\\host" are
+ * protocol-relative (browsers read "\\" as "/"), so they are refused like absolute URLs.
+ */
+function safeNotificationPath(value) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.startsWith("/\\")) return "/";
+  try {
+    const resolved = new URL(value, self.location.origin);
+    return resolved.origin === self.location.origin ? `${resolved.pathname}${resolved.search}${resolved.hash}` : "/";
+  } catch {
+    return "/";
+  }
+}
+
 // Web Push: inert until the app subscribes a device (phase 4, D07).
 self.addEventListener("push", (event) => {
   let data = {};
@@ -324,7 +338,7 @@ self.addEventListener("push", (event) => {
   } catch {
     data = { body: event.data ? event.data.text() : "" };
   }
-  const url = typeof data.url === "string" && data.url.startsWith("/") ? data.url : "/";
+  const url = safeNotificationPath(data.url);
   event.waitUntil(
     self.registration.showNotification(data.title || "SHIFTY", {
       body: data.body || "",
@@ -337,7 +351,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
+  const target = new URL(safeNotificationPath(event.notification.data && event.notification.data.url), self.location.origin).href;
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
       const existing = windows.find((w) => new URL(w.url).origin === self.location.origin);
