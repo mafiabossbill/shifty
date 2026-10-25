@@ -32,4 +32,9 @@ describe("capability map", () => {
     for (const role of ["manager", "member", "viewer"] as const) expect(can({ role }, "member:manage")).toBe(false);
   });
 
+  it("lets admins and members track their own shifts, nobody else", () => {
+    for (const role of ["admin", "member"] as const) expect(can({ role }, "shift:track")).toBe(true);
+    for (const role of ["manager", "viewer"] as const) expect(can({ role }, "shift:track")).toBe(false);
+  });
+
 });
