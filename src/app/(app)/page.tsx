@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
-import { TimerIcon } from "lucide-react";
+import { Suspense } from "react";
 
-import { Page, PageHeader } from "@/components/shell/page";
-import { EmptyState } from "@/components/ui/empty-state";
+import { HomeScreen, HomeSkeleton } from "@/components/home/home-screen";
 
 export const metadata: Metadata = { title: "Home" };
 
-/** Placeholder: the Home lane replaces this body with the clock-in / active-session hero. */
+/**
+ * Home: clock in, the running session, and the recap. Static shell; everything comes from the device
+ * store. The query (`?action=clock-in` shortcut) is read on the client, behind Suspense.
+ */
 export default function HomePage() {
   return (
-    <Page>
-      <PageHeader title="Home" />
-      <EmptyState icon={<TimerIcon />} title="Your shift will show here once you clock in." />
-    </Page>
+    <Suspense fallback={<HomeSkeleton />}>
+      <HomeScreen />
+    </Suspense>
   );
 }
