@@ -28,3 +28,6 @@ npm-debug.log*
 .factory-gate-ok
 .factory-gate.lock
 .release-preflight
+
+# Local review screenshots
+screenshots/
