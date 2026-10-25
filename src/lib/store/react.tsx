@@ -87,12 +87,10 @@ export function useShiftStore(): ShiftStore {
   return store;
 }
 
-const SERVER_VIEW: StoreView | null = null;
-
 /** The current view (sessions, active session, profile, sync state). Re-renders on every change. */
 export function useShift(): StoreView {
   const store = useShiftStore();
-  return useSyncExternalStore(store.subscribe, store.getSnapshot, () => SERVER_VIEW ?? store.getSnapshot());
+  return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);
 }
 
 /**

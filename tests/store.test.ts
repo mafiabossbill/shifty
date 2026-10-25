@@ -302,3 +302,19 @@ describe("rewards wiring", () => {
     expect(store.getSnapshot().profile.ledger.length).toBe(rows);
   });
 });
+
+describe("view consistency", () => {
+  it("the undo window reaches subscribers, and the server snapshot is never ready", async () => {
+    const d = device();
+    expect(d.store.getServerSnapshot().ready).toBe(false);
+    await d.store.init();
+    await d.store.clockIn();
+    d.clock.t += 60_000;
+    let notified = 0;
+    d.store.subscribe(() => notified++);
+    await d.store.clockOut();
+    expect(d.store.getSnapshot().undo).not.toBeNull();
+    expect(notified).toBeGreaterThan(0);
+    expect(d.store.getServerSnapshot().ready).toBe(false);
+  });
+});
