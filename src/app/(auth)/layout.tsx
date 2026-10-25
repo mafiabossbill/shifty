@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { APP_CONFIG } from "@/lib/app-config";
 import { LEGAL_LINKS } from "@/lib/legal";
+import { supabaseConfigured } from "@/lib/supabase/env";
 
 /** Sign-in, sign-up and password pages: a quiet brand header and one form. */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
@@ -17,7 +18,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         </span>
         <span className="text-[13px] font-semibold">{APP_CONFIG.name}</span>
       </div>
-      <main className="mx-auto mt-12 w-full max-w-sm">{children}</main>
+      <main className="mx-auto mt-12 w-full max-w-sm">{supabaseConfigured() ? children : <SyncNotSetUp />}</main>
       <nav aria-label="Legal" className="mx-auto mt-auto flex w-full max-w-sm flex-wrap gap-x-4 gap-y-2 pt-12 text-[12px] text-muted-foreground">
         {LEGAL_LINKS.map((link) => (
           <Link key={link.href} href={link.href} className="hover:text-foreground">
@@ -26,5 +27,21 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         ))}
       </nav>
     </div>
+  );
+}
+
+/** Device mode: no Supabase project on this deployment, so there are no accounts to sign in to. */
+function SyncNotSetUp() {
+  return (
+    <>
+      <h1 className="text-xl font-semibold tracking-tight">Sync isn&apos;t set up on this deployment</h1>
+      <p className="mt-1 mb-6 text-sm text-muted-foreground">
+        You can still track everything: your sessions are saved on this device. Accounts and syncing between devices
+        switch on once this deployment is connected to its database.
+      </p>
+      <Link href="/" className="text-sm font-medium underline underline-offset-4">
+        Back to {APP_CONFIG.name}
+      </Link>
+    </>
   );
 }

@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { SupabaseShiftRepository, type ShiftRepository } from "./shifts";
+
 /*
  * The signed-in person's own data: export (access + portability) and deletion (erasure).
  * Reads run as the person, so RLS limits the export to what they may see.
@@ -12,9 +14,22 @@ export interface DeletionImpact {
   outcome: "deleted" | "blocked" | "kept";
 }
 
+/** SHIFTY tracking data: every session (trash included, with its location fixes: it's the person's own data),
+ * the profile document (settings, companion, projects, places, activities, reward ledger, achievements) and
+ * how many events the server has committed. */
+export async function exportShiftData(repo: ShiftRepository): Promise<Record<string, unknown>> {
+  const [sessions, profile, events] = await Promise.all([repo.loadSessions(), repo.loadProfile(), repo.countEvents()]);
+  return {
+    note: "Instants are UTC epoch milliseconds; each session keeps the IANA timezone its days are reported in.",
+    sessions,
+    ...profile,
+    events_committed: events,
+  };
+}
+
 /** Everything the app holds about the person, as one JSON document. */
 export async function exportAccountData(supabase: SupabaseClient, userId: string): Promise<Record<string, unknown>> {
-  const [{ data: auth }, profile, memberships] = await Promise.all([
+  const [{ data: auth }, profile, memberships, shifty] = await Promise.all([
     supabase.auth.getUser(),
     supabase.from("profiles").select("full_name, created_at, updated_at").eq("id", userId).maybeSingle(),
     supabase
@@ -22,6 +37,7 @@ export async function exportAccountData(supabase: SupabaseClient, userId: string
       .select("role, deactivated_at, created_at, organizations(name)")
       .eq("profile_id", userId)
       .order("created_at"),
+    exportShiftData(new SupabaseShiftRepository(supabase, userId, null)),
   ]);
   const data: Record<string, unknown> = {
     exported_at: new Date().toISOString(),
@@ -35,6 +51,7 @@ export async function exportAccountData(supabase: SupabaseClient, userId: string
     },
     profile: profile.data,
     workspaces: memberships.data ?? [],
+    shifty,
   };
   // Add each entity's rows the person created or is named on.
   return data;
