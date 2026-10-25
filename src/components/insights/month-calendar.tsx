@@ -9,7 +9,7 @@ import * as React from "react";
 import Link from "next/link";
 
 import { formatDate, formatDuration, formatMonth, formatTime, hours, type ClockFormat } from "@/lib/format";
-import { sessionHref, sessionsHref } from "@/lib/insights/labels";
+import { durationsByRow, sessionHref, sessionsHref } from "@/lib/insights/labels";
 import type { CalendarModel } from "@/lib/insights/model";
 import type { AllocationMode, SessionFacts } from "@/lib/reports";
 import type { LocalDate } from "@/lib/time/zone";
@@ -49,6 +49,7 @@ export function MonthCalendar({
   const rowH = width < 480 ? 54 : 60;
   const monthCells = cells.filter((c) => c.inMonth);
   const anyEarlier = monthCells.some((c) => c.startedEarlier);
+  const netText = durationsByRow(monthCells, (c) => c.date, (c) => c.netMs);
 
   return (
     <ChartCard
@@ -68,7 +69,7 @@ export function MonthCalendar({
           rowKey={(c) => c.date}
           columns={[
             { label: "Date", cell: (c) => formatDate(c.date, { thisYear }) },
-            { label: "Net", numeric: true, cell: (c) => <DrillLink href={sessionsHref(c.sessionIds)}>{formatDuration(c.netMs)}</DrillLink> },
+            { label: "Net", numeric: true, cell: (c) => <DrillLink href={sessionsHref(c.sessionIds)}>{netText.get(c.date)}</DrillLink> },
             { label: "From an earlier start", cell: (c) => (c.startedEarlier ? "Yes" : "") },
           ]}
         />

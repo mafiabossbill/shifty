@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 export function SettingsHeader({ title, description }: { title: string; description?: React.ReactNode }) {
   return (
     <header className="grid gap-2">
-      <Link href="/settings" className="-ml-1 inline-flex h-10 w-fit items-center gap-1 rounded-lg pr-2 text-sm text-muted-foreground hover:text-foreground focus-ring lg:hidden">
+      <Link href="/settings" className="-ml-1 inline-flex h-11 w-fit items-center gap-1 rounded-lg pr-2 text-sm text-muted-foreground hover:text-foreground focus-ring lg:hidden">
         <ChevronLeftIcon className="size-4" aria-hidden />
         Settings
       </Link>

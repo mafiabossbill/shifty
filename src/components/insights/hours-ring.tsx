@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Pill } from "@/components/ui/status-pill";
 import { formatDate, formatDuration, spokenDuration, weekdayShort } from "@/lib/format";
-import { plural, rangeLabel, sessionsHref, spanLabel } from "@/lib/insights/labels";
+import { durationsByRow, plural, rangeLabel, sessionsHref, spanLabel } from "@/lib/insights/labels";
 import type { InsightsModel, RingDatum } from "@/lib/insights/model";
 import type { RangeKind } from "@/lib/insights/params";
 import { HOLE, polar, ringAt, ringOffset, ringTracks, spokeAt, spokeLayout } from "@/lib/insights/radial";
@@ -41,6 +41,8 @@ export function HoursRing({
   className?: string;
 }) {
   const { ring, summary } = model;
+  const netText = durationsByRow(ring.data, (d) => d.key, (d) => d.netMs);
+  const breakText = durationsByRow(ring.data, (d) => d.key, (d) => d.breakMs);
   const [ref, width] = useElementWidth<HTMLDivElement>();
   const size = Math.max(220, Math.min(width || 300, 340));
   const ix = useChartInteraction(ring.data.length);
@@ -75,8 +77,8 @@ export function HoursRing({
             rowKey={(d) => d.key}
             columns={[
               { label: ring.unit === "week" ? "Week" : "Date", cell: (d) => datumLabel(d, today) },
-              { label: "Net", numeric: true, cell: (d) => <DrillLink href={sessionsHref(d.sessionIds)}>{formatDuration(d.netMs)}</DrillLink> },
-              { label: "Breaks", numeric: true, cell: (d) => formatDuration(d.breakMs) },
+              { label: "Net", numeric: true, cell: (d) => <DrillLink href={sessionsHref(d.sessionIds)}>{netText.get(d.key)}</DrillLink> },
+              { label: "Breaks", numeric: true, cell: (d) => breakText.get(d.key) },
             ]}
             foot={["Total", formatDuration(summary.netMs), formatDuration(summary.breakMs)]}
           />

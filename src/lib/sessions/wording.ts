@@ -93,21 +93,3 @@ export function goalCopy(netMs: number, goalSeconds: number, running = false): s
   if (netMs === goalMs) return `Reached your ${goal} goal`;
   return running ? `${formatDuration(goalMs - netMs)} to your ${goal} goal` : `${formatDuration(netMs)} of your ${goal} goal`;
 }
-
-/**
- * Whole minutes for parts of a total, so the shown parts add up to the shown total (largest remainder).
- * `formatDuration` floors each value; flooring parts separately can lose a minute against the total.
- */
-export function apportionMinutes(partsMs: readonly number[]): number[] {
-  const MIN = 60_000;
-  const total = Math.floor(partsMs.reduce((s, p) => s + Math.max(0, p), 0) / MIN);
-  const floors = partsMs.map((p) => Math.floor(Math.max(0, p) / MIN));
-  let left = total - floors.reduce((s, f) => s + f, 0);
-  const order = partsMs.map((p, i) => ({ i, rem: Math.max(0, p) % MIN })).sort((a, b) => b.rem - a.rem || a.i - b.i);
-  for (const { i } of order) {
-    if (left <= 0) break;
-    floors[i]++;
-    left--;
-  }
-  return floors;
-}

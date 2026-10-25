@@ -18,13 +18,14 @@ import { allocateByDay, sessionMetrics } from "@/lib/time/allocate";
 import { localDateOf, wallClock, type WeekStart } from "@/lib/time/zone";
 import { cn } from "@/lib/utils";
 
-/** Net this week (calendar mode: midnight-crossing time lands on the day it was worked) + a 7-bar sparkline. */
+/** Net this week (calendar mode: midnight-crossing time lands on the day it was worked) + a 7-bar sparkline. `now` is the live clock. */
 export function WeekCard({ sessions, now, zone, weekStart }: { sessions: readonly ShiftSession[]; now: number; zone: string; weekStart: WeekStart }) {
   const today = localDateOf(now, zone);
-  const week = useMemo(() => {
-    const facts = sessionFacts(sessions, now);
-    return summarize(dailyTotals(facts, "calendar"), rangeFor("week", today, weekStart), "calendar");
-  }, [sessions, now, today, weekStart]);
+  // Finished sessions don't depend on the clock (`now` unused for them): computed once per data change. The running one is recomputed with
+  // the exact `now`, so this total reads the same minute as the hero's readout (no coarse tick lagging behind it).
+  const closedFacts = useMemo(() => sessionFacts(sessions.filter((s) => s.endedAt !== null), 0), [sessions]);
+  const running = sessions.filter((s) => s.endedAt === null);
+  const week = summarize(dailyTotals([...closedFacts, ...sessionFacts(running, now)], "calendar"), rangeFor("week", today, weekStart), "calendar");
   const bars = weekBars(week.series, today);
 
   return (
@@ -108,7 +109,7 @@ export function RhythmCard({ rewards }: { rewards: RewardsResult }) {
         <Pill tone="info" icon={<SnowflakeIcon />}>
           {r.freezesAvailable} {r.freezesAvailable === 1 ? "freeze" : "freezes"}
         </Pill>
-        {r.best > 0 ? <span>Best {r.best} days</span> : null}
+        {r.best > 0 ? <span>Best {r.best} {r.best === 1 ? "day" : "days"}</span> : null}
       </div>
       <p className="text-xs text-muted-foreground">{lines.freezes}</p>
     </Card>

@@ -16,7 +16,7 @@ export function RhythmCard({ rhythm }: { rhythm: RhythmResult | null }) {
   const freezes = rhythm?.freezesAvailable ?? 0;
   const today = TODAY[rhythm?.todayStatus ?? "pending"];
   const lead =
-    current > 0 ? `${current} planned day${current === 1 ? "" : "s"} in a row.` : best > 0 ? `A fresh start. Your best is ${best} days.` : "Your rhythm starts with your next planned day.";
+    current > 0 ? `${current} planned day${current === 1 ? "" : "s"} in a row.` : best > 0 ? `A fresh start. Your best is ${best} ${best === 1 ? "day" : "days"}.` : "Your rhythm starts with your next planned day.";
   return (
     <Card className="gap-4">
       <CardHeader>

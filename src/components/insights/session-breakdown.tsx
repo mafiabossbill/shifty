@@ -10,7 +10,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatTile } from "@/components/ui/stat-tile";
 import { formatDate, formatDuration, spokenDuration, type ClockFormat } from "@/lib/format";
-import { plural, sessionHref } from "@/lib/insights/labels";
+import { durationsByRow, plural, sessionHref } from "@/lib/insights/labels";
 import { buildSessionBreakdown } from "@/lib/insights/model";
 import type { SessionFacts } from "@/lib/reports";
 import type { LocalDate } from "@/lib/time/zone";
@@ -58,6 +58,9 @@ export function SessionBreakdownView({
   const b = buildSessionBreakdown(fact);
   const y = today.slice(0, 4);
   const ribbon = { rows: [b.row], hidden: 0, axis: b.axis };
+  const netText = durationsByRow(b.row.days, (d) => d.date, (d) => d.netMs);
+  const breakText = durationsByRow(b.row.days, (d) => d.date, (d) => d.breakMs);
+  const clockedText = durationsByRow(b.row.days, (d) => d.date, (d) => d.elapsedMs);
   return (
     <div className="grid gap-4 lg:gap-5">
       {back}
@@ -110,9 +113,9 @@ export function SessionBreakdownView({
             rowKey={(d) => d.date}
             columns={[
               { label: "Date", cell: (d) => <DrillLink href={`/sessions?date=${d.date}`}>{formatDate(d.date, { thisYear: y })}</DrillLink> },
-              { label: "Net", numeric: true, cell: (d) => formatDuration(d.netMs) },
-              { label: "Breaks", numeric: true, cell: (d) => formatDuration(d.breakMs) },
-              { label: "Clocked", numeric: true, cell: (d) => formatDuration(d.elapsedMs) },
+              { label: "Net", numeric: true, cell: (d) => netText.get(d.date) },
+              { label: "Breaks", numeric: true, cell: (d) => breakText.get(d.date) },
+              { label: "Clocked", numeric: true, cell: (d) => clockedText.get(d.date) },
             ]}
             foot={["Total", formatDuration(b.totalNetMs), formatDuration(b.row.breakMs), formatDuration(b.row.netMs + b.row.breakMs)]}
           />

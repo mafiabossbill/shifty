@@ -203,7 +203,7 @@ export function HomeScreen() {
         {firstRun ? null : (
           <div className="grid min-w-0 gap-4">
             {!active && last ? <LastSessionCard session={last} now={now} clock={settings.clock} projects={view.profile.projects} /> : null}
-            <WeekCard sessions={view.sessions} now={Math.floor(now / 30_000) * 30_000} zone={zone} weekStart={settings.weekStart} />
+            <WeekCard sessions={view.sessions} now={now} zone={zone} weekStart={settings.weekStart} />
             <RhythmCard rewards={rewards} />
           </div>
         )}

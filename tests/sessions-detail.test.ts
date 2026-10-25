@@ -14,7 +14,8 @@ import {
 } from "@/lib/sessions/draft";
 import { daySplit, timelineItems } from "@/lib/sessions/geometry";
 import { rezoneChanges, rezonePreview } from "@/lib/sessions/rezone";
-import { accuracyCopy, apportionMinutes, describeChanges, formatRange, goalCopy } from "@/lib/sessions/wording";
+import { apportionMinutes } from "@/lib/format";
+import { accuracyCopy, describeChanges, formatRange, goalCopy } from "@/lib/sessions/wording";
 import { fromWallClockInput, toWallClockInput } from "@/lib/time/zone";
 
 const H = 3_600_000;
@@ -133,7 +134,7 @@ describe("wording", () => {
 
   it("apportions minutes so the shown days add up to the shown total", () => {
     const parts = [5 * H + 59.5 * M, 9 * H + 30.5 * M];
-    expect(apportionMinutes(parts)).toEqual([360, 570]);
+    expect(apportionMinutes(parts)).toEqual([359, 571]);
     expect(apportionMinutes(parts).reduce((s, m) => s + m, 0)).toBe(Math.floor((parts[0] + parts[1]) / M));
     expect(apportionMinutes([0, 0])).toEqual([0, 0]);
   });

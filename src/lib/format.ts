@@ -24,6 +24,30 @@ export function formatDuration(ms: number, opts: { seconds?: boolean } = {}): st
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+/**
+ * Whole minutes for parts of a total, so the shown parts add up to the shown total (`formatDuration` of the sum).
+ * `formatDuration` floors each value; flooring parts separately can lose a minute against the total.
+ * Carry rounding in the given (chronological) order: part i = ⌊Σ₀..ᵢ⌋ − ⌊Σ₀..ᵢ₋₁⌋, so every part is its own floor or
+ * one more, and earlier parts never change while the last one is still growing (a running shift's past days stay put).
+ */
+export function apportionMinutes(partsMs: readonly number[]): number[] {
+  const MIN = 60_000;
+  let sum = 0;
+  let shown = 0;
+  return partsMs.map((p) => {
+    sum += Math.max(0, p);
+    const upTo = Math.floor(sum / MIN);
+    const part = upTo - shown;
+    shown = upTo;
+    return part;
+  });
+}
+
+/** `formatDuration` for each part, apportioned so the parts add up to `formatDuration(sum)`. */
+export function formatDurationParts(partsMs: readonly number[]): string[] {
+  return apportionMinutes(partsMs).map((min) => formatDuration(min * 60_000));
+}
+
 /** Decimal hours for chart axes: 15.5. */
 export function hours(ms: number, digits = 1): number {
   const f = 10 ** digits;

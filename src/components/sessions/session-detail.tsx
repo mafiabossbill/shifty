@@ -55,6 +55,7 @@ export function SessionDetailScreen() {
     return (
       <Page width="narrow">
         <BackLink />
+        <h1 className="sr-only">Session not found</h1>
         <EmptyState
           icon={<SearchXIcon />}
           title="This session isn't on this device."

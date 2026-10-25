@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  *   link       navigation inside prose only.
  * Sizes: sm (toolbars, rows) · md (forms, dialogs; default) · lg (sheet footers, phone CTAs)
  *        xl (THE big round CLOCK IN / CLOCK OUT) · icon-sm · icon · icon-lg (icon-only: needs aria-label).
- * Phones get 44px+ controls; on any touch screen the hit area is at least 44px (globals.css).
+ * Phones get 44px+ controls; on any touch screen the hit area is at least 44px (globals.css, via data-touch-target).
  */
 const buttonVariants = cva(
   [
@@ -70,6 +70,9 @@ function Button({ className, variant, size, asChild = false, type, ...props }: B
   return (
     <Comp
       data-slot="button"
+      // Radix triggers (`DropdownMenuTrigger asChild`…) replace data-slot with their own; this attribute survives the
+      // merge, so the 44px touch hit area in globals.css applies to every Button.
+      data-touch-target=""
       // A <button> inside a <form> submits by default; make that an explicit choice.
       type={asChild ? undefined : (type ?? "button")}
       className={cn(buttonVariants({ variant, size }), className)}

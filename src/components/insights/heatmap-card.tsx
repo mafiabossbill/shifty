@@ -8,7 +8,7 @@ import * as React from "react";
 
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { formatDate, formatDuration, spokenDuration, weekdayShort } from "@/lib/format";
-import { sessionsHref } from "@/lib/insights/labels";
+import { durationsByRow, sessionsHref } from "@/lib/insights/labels";
 import type { HeatGrid } from "@/lib/insights/model";
 import type { HeatDays } from "@/lib/insights/params";
 import type { LocalDate } from "@/lib/time/zone";
@@ -45,6 +45,10 @@ export function HeatmapCard({
   const active = ix.active !== null ? slots[ix.active] : null;
   const pos = (i: number) => ({ col: i % 7, row: Math.floor(i / 7) });
   const thisYear = today.slice(0, 4);
+  const inside = slots.filter((s) => !s.outside);
+  // Apportioned oldest first (today's growing time never shifts older rows); shown newest first.
+  const netText = durationsByRow(inside, (s) => s.date, (s) => s.netMs);
+  const tableRows = [...inside].reverse();
 
   return (
     <ChartCard
@@ -74,11 +78,11 @@ export function HeatmapCard({
       table={
         <DataTable
           caption={`Net time per day, last ${heat.days} days`}
-          rows={slots.filter((s) => !s.outside).reverse()}
+          rows={tableRows}
           rowKey={(s) => s.date}
           columns={[
             { label: "Date", cell: (s) => formatDate(s.date, { thisYear }) },
-            { label: "Net", numeric: true, cell: (s) => <DrillLink href={sessionsHref(s.sessionIds)}>{formatDuration(s.netMs)}</DrillLink> },
+            { label: "Net", numeric: true, cell: (s) => <DrillLink href={sessionsHref(s.sessionIds)}>{netText.get(s.date)}</DrillLink> },
             { label: "Level", numeric: true, cell: (s) => `${s.level} of 4` },
           ]}
         />
@@ -96,7 +100,7 @@ export function HeatmapCard({
     >
       <div ref={ref} className="min-h-32">
         {width > 0 ? (
-          <ChartSurface interaction={ix} label={`Activity heatmap, last ${heat.days} days: ${spokenDuration(heat.totalMs)} on ${heat.activeDays} days`} className="w-fit" style={{ width: gridW }}>
+          <ChartSurface interaction={ix} label={`Activity heatmap, last ${heat.days} days: ${spokenDuration(heat.totalMs)} on ${heat.activeDays} ${heat.activeDays === 1 ? "day" : "days"}`} className="w-fit" style={{ width: gridW }}>
             <svg
               width={gridW}
               height={height}

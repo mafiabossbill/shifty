@@ -2,7 +2,7 @@
  * Home view models: pure functions of sessions, settings and `now`. No React, no store — unit-tested in
  * tests/home-view-model.test.ts. Times are always shown in the session's reporting zone.
  */
-import { formatDuration, formatTime, weekdayShort, type ClockFormat } from "@/lib/format";
+import { formatDuration, formatDurationParts, formatTime, weekdayShort, type ClockFormat } from "@/lib/format";
 import type { LocationFix, ShiftSession } from "@/lib/shifts/types";
 import type { DayAllocation } from "@/lib/time/allocate";
 import { addDays, localDateOf, wallClock, type LocalDate } from "@/lib/time/zone";
@@ -49,24 +49,24 @@ export function goalAtLine(predictedFinishAt: number, now: number, zone: string,
   return `Goal at ${formatTime(predictedFinishAt, zone, clock)} ${dayWord(date, today)}`;
 }
 
-/** "Crossed midnight · 6h on Mon, 3h 20m today" — null for a single-day session. */
+/** "Crossed midnight · 6h on Mon, 3h 20m today" — null for a single-day session. The days add up to the net shown. */
 export function crossedMidnightLine(days: readonly DayAllocation[], today: LocalDate): string | null {
   const touched = days.filter((d) => d.elapsedMs > 0);
   if (touched.length < 2) return null;
-  const parts = touched.map((d) => {
+  const amounts = formatDurationParts(touched.map((d) => d.netMs));
+  const parts = touched.map((d, i) => {
     const word = dayWord(d.date, today);
-    const amount = formatDuration(d.netMs);
+    const amount = amounts[i];
     return word === "today" ? `${amount} today` : `${amount} on ${word === "yesterday" ? weekdayShort(d.date) : word}`;
   });
   return `Crossed midnight · ${parts.join(", ")}`;
 }
 
-/** Recap per-day split: "Mon 6h · Tue 9h 30m". */
+/** Recap per-day split: "Mon 6h · Tue 9h 30m". The days add up to `formatDuration(net)` (apportioned minutes). */
 export function daySplitLine(days: readonly DayAllocation[]): string {
-  return days
-    .filter((d) => d.elapsedMs > 0)
-    .map((d) => `${weekdayShort(d.date)} ${formatDuration(d.netMs)}`)
-    .join(" · ");
+  const touched = days.filter((d) => d.elapsedMs > 0);
+  const amounts = formatDurationParts(touched.map((d) => d.netMs));
+  return touched.map((d, i) => `${weekdayShort(d.date)} ${amounts[i]}`).join(" · ");
 }
 
 /** Neutral overage copy. Never praise: "+1h 12m past your goal. Rest well." */

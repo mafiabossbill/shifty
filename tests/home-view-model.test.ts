@@ -18,6 +18,7 @@ import {
   undoSecondsLeft,
   weekBars,
 } from "@/lib/home/view-model";
+import { formatDuration } from "@/lib/format";
 import { allocateByDay } from "@/lib/time/allocate";
 import { dailyTotals, rangeFor, sessionFacts, summarize } from "@/lib/reports";
 import type { LocationFix, ShiftSession } from "@/lib/shifts/types";
@@ -133,6 +134,34 @@ describe("crossing midnight (brief acceptance: Mon 18:00 → Tue, break 02:00–
   });
   it("recap split reads Mon 6h · Tue 9h 30m", () => {
     expect(daySplitLine(allocateByDay({ ...s, endedAt: now }, now))).toBe("Mon 6h · Tue 9h 30m");
+  });
+});
+
+describe("per-day splits add up to the net shown (QA-M2: clock-in seconds)", () => {
+  // Mon 19 Oct 18:00:30 → Tue 20 Oct 01:12:30 EAT: net 7h 12m, Mon 5h 59m 30s + Tue 1h 12m 30s.
+  const start = Date.UTC(2026, 9, 19, 15, 0, 30);
+  const end = Date.UTC(2026, 9, 19, 22, 12, 30);
+  const s = session({ startedAt: start, originalStartedAt: start });
+
+  it("recap split reads Mon 5h 59m · Tue 1h 13m (sums to 7h 12m, not 7h 11m)", () => {
+    const days = allocateByDay({ ...s, endedAt: end }, end);
+    expect(formatDuration(days.reduce((t, d) => t + d.netMs, 0))).toBe("7h 12m");
+    expect(daySplitLine(days)).toBe("Mon 5h 59m · Tue 1h 13m");
+  });
+  it("hero midnight line sums to the 07:12 readout, and Mon stays put while today grows", () => {
+    for (const [now, tue] of [
+      [end, "1h 13m"],
+      [end + 1_000, "1h 13m"],
+      [end + 29_000, "1h 13m"],
+      [end + 31_000, "1h 13m"],
+      [end + 60_000, "1h 14m"],
+    ] as const) {
+      expect(crossedMidnightLine(allocateByDay(s, now), "2026-10-20")).toBe(`Crossed midnight · 5h 59m on Mon, ${tue} today`);
+    }
+  });
+  it("leaves already-exact splits alone", () => {
+    const days = allocateByDay({ ...s, startedAt: MON_18, endedAt: MON_18 + 15 * H }, MON_18 + 15 * H);
+    expect(daySplitLine(days)).toBe("Mon 6h · Tue 9h");
   });
 });
 

@@ -1,9 +1,8 @@
 import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 
-import { formatDate, formatDuration, spokenDuration } from "@/lib/format";
+import { apportionMinutes, formatDate, formatDuration, spokenDuration } from "@/lib/format";
 import type { DaySplit } from "@/lib/sessions/geometry";
-import { apportionMinutes } from "@/lib/sessions/wording";
 import { cn } from "@/lib/utils";
 
 /**

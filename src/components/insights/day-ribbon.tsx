@@ -8,7 +8,7 @@
  */
 import * as React from "react";
 
-import { formatDate, formatDuration, formatTime, smartTitle, spokenDuration, weekdayShort, zoneAbbreviation, type ClockFormat } from "@/lib/format";
+import { formatDate, formatDuration, formatDurationParts, formatTime, smartTitle, spokenDuration, weekdayShort, zoneAbbreviation, type ClockFormat } from "@/lib/format";
 import { clockLabel, plural, sessionHref, sessionsHref } from "@/lib/insights/labels";
 import type { RibbonModel, RibbonRow } from "@/lib/insights/model";
 import { deviceTimeZone, wallClock, type LocalDate } from "@/lib/time/zone";
@@ -135,6 +135,7 @@ export function RibbonChart({
               const clipId = `${clipBase}-r${i}`;
               const sx = x(row.startH);
               const ex = Math.max(sx + 2, x(row.endH));
+              const dayText = formatDurationParts(row.days.map((d) => d.netMs));
               return (
                 <g key={row.sessionId} className={cn("transition-opacity duration-150", dim && "opacity-40")}>
                   {labelW ? (
@@ -168,7 +169,7 @@ export function RibbonChart({
                         if (b - a < 56) return null;
                         return (
                           <text key={d.date} x={(a + b) / 2} y={y0 + rowH + 14} textAnchor="middle" className="fill-muted-foreground text-[11px] tabular">
-                            {`${formatDate(d.date, { weekday: true }).split(" ")[0]} ${formatDuration(d.netMs)}`}
+                            {`${formatDate(d.date, { weekday: true }).split(" ")[0]} ${dayText[k]}`}
                             <title>{`Day ${k + 1}`}</title>
                           </text>
                         );
@@ -186,9 +187,9 @@ export function RibbonChart({
               width={width}
               title={rowTitle(active, clock)}
               rows={[
-                ...active.days.map((d, k) => ({
-                  label: formatDate(d.date, { thisYear: today.slice(0, 4) }),
-                  value: formatDuration(d.netMs),
+                ...formatDurationParts(active.days.map((d) => d.netMs)).map((value, k) => ({
+                  label: formatDate(active.days[k].date, { thisYear: today.slice(0, 4) }),
+                  value,
                   swatch: (k % 2 === 0 ? "net" : "break") as "net" | "break",
                 })),
                 { label: "Breaks", value: formatDuration(active.breakMs) },
@@ -206,6 +207,12 @@ export function RibbonChart({
   );
 }
 
+/** "Mon 19 6h · Tue 20 9h 30m" — apportioned, so the days add up to the row's net. */
+function byDayText(days: readonly { date: LocalDate; netMs: number }[]): string {
+  const text = formatDurationParts(days.map((d) => d.netMs));
+  return days.map((d, k) => `${formatDate(d.date, { weekday: true }).split(" ").slice(0, 2).join(" ")} ${text[k]}`).join(" · ");
+}
+
 export function RibbonCard({ ribbon, clock, today, sessionIds, className }: { ribbon: RibbonModel; clock: ClockFormat; today: LocalDate; sessionIds: string[]; className?: string }) {
   const total = ribbon.rows.reduce((s, r) => s + r.netMs, 0);
   return (
@@ -221,7 +228,7 @@ export function RibbonCard({ ribbon, clock, today, sessionIds, className }: { ri
           rowKey={(r) => r.sessionId}
           columns={[
             { label: "Shift", cell: (r) => <DrillLink href={sessionHref(r.sessionId)}>{spanText(r, clock, today)}</DrillLink> },
-            { label: "By day", cell: (r) => r.days.map((d) => `${formatDate(d.date, { weekday: true }).split(" ").slice(0, 2).join(" ")} ${formatDuration(d.netMs)}`).join(" · ") },
+            { label: "By day", cell: (r) => byDayText(r.days) },
             { label: "Breaks", numeric: true, cell: (r) => formatDuration(r.breakMs) },
             { label: "Net", numeric: true, cell: (r) => formatDuration(r.netMs) },
           ]}

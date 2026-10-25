@@ -29,7 +29,6 @@ async function crossMidnightWithSeconds(page: Page) {
 // QA-M2: the recap's per-day line floors each day separately, so "Mon 5h 59m · Tue 1h 12m" sits under a
 // "7h 12m" total. The session detail apportions minutes (DayContributions) and adds up; the recap doesn't.
 test("QA-M2: recap per-day split adds up to the net shown", async ({ page }) => {
-  test.fail(!process.env.QA_SHOW_BUGS, "QA-M2 open: recap day split uses floored minutes per day (src/lib/home/view-model.ts daySplitLine)");
   await crossMidnightWithSeconds(page);
   await clockOutButton(page).click();
   const sheet = recap(page);
@@ -43,7 +42,6 @@ test("QA-M2: recap per-day split adds up to the net shown", async ({ page }) => 
 
 // QA-M2 (same root cause) in the active hero's "Crossed midnight · 5h 59m on Mon, 1h 12m today" line.
 test("QA-M2: active hero midnight line adds up to the net readout", async ({ page }) => {
-  test.fail(!process.env.QA_SHOW_BUGS, "QA-M2 open: crossedMidnightLine floors each day separately");
   await crossMidnightWithSeconds(page);
   await page.clock.runFor(1_000);
   const line = await page.locator("p", { hasText: "Crossed midnight" }).innerText();
@@ -72,7 +70,6 @@ test("QA-M3: a second open tab shows the running session once it comes to the fr
 
 // QA-L1: the "session not on this device" empty state has no h1 (every other screen has exactly one).
 test("QA-L1: the missing-session page has one h1", async ({ page }) => {
-  test.fail(!process.env.QA_SHOW_BUGS, "QA-L1 open: EmptyState title is not a heading level 1");
   await page.goto("/sessions/view?id=00000000-0000-4000-8000-000000000000");
   await expect(page.getByText("This session isn't on this device.")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
@@ -83,7 +80,6 @@ test("QA-L1: the missing-session page has one h1", async ({ page }) => {
 // "More actions" on session detail is 40×40 on phones; "Share week"/"Share recap" are 40px tall.
 test("QA-L2: More actions on session detail has a 44px touch hit area on phones", async ({ page }, info) => {
   test.skip(info.project.name === "desktop", "touch targets are a phone check");
-  test.fail(!process.env.QA_SHOW_BUGS, "QA-L2 open: trigger data-slot overrides the Button's data-slot=button");
   await page.goto("/sessions/new");
   await page.getByLabel("Start", { exact: true }).fill("2026-10-22T09:00");
   await page.getByLabel("End", { exact: true }).fill("2026-10-22T17:00");
@@ -105,7 +101,6 @@ test("QA-L2: More actions on session detail has a 44px touch hit area on phones"
 
 // QA-L3: the rhythm card says "Best 1 days".
 test("QA-L3: the rhythm card pluralises 'day'", async ({ page }) => {
-  test.fail(!process.env.QA_SHOW_BUGS, "QA-L3 open: src/components/home/side-cards.tsx 'Best {r.best} days'");
   await crossMidnightWithSeconds(page);
   await clockOutButton(page).click();
   await recap(page).getByRole("button", { name: /^(Done|Save and close)$/ }).click();

@@ -16,16 +16,16 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
         style={{ background: "radial-gradient(closest-side, var(--glow), transparent 70%)" }}
       />
       <div className="relative mx-auto flex w-full max-w-sm items-center">
-        <Link href="/" className="rounded-lg focus-ring" aria-label="SHIFTY home">
+        <Link href="/" className="inline-flex min-h-11 items-center rounded-lg focus-ring" aria-label="SHIFTY home">
           <BrandLockup />
         </Link>
       </div>
       <main className="relative mx-auto mt-10 w-full max-w-sm rounded-card border border-border bg-card p-6 shadow-card md:mt-14 md:p-8">
         {supabaseConfigured() ? children : <SyncNotSetUp />}
       </main>
-      <nav aria-label="Legal" className="relative mx-auto mt-auto flex w-full max-w-sm flex-wrap gap-x-4 gap-y-2 pt-12 text-xs text-muted-foreground">
+      <nav aria-label="Legal" className="relative mx-auto mt-auto flex w-full max-w-sm flex-wrap gap-x-4 pt-12 text-xs md:gap-y-2 text-muted-foreground">
         {LEGAL_LINKS.map((link) => (
-          <Link key={link.href} href={link.href} className="rounded hover:text-foreground focus-ring">
+          <Link key={link.href} href={link.href} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded hover:text-foreground focus-ring md:min-h-0 md:min-w-0">
             {link.label}
           </Link>
         ))}
@@ -43,7 +43,7 @@ function SyncNotSetUp() {
         You can still track everything: your sessions are saved on this device. Accounts and syncing between devices
         switch on once this deployment is connected to its database.
       </p>
-      <Link href="/" className="text-sm font-medium underline underline-offset-4">
+      <Link href="/" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4 md:min-h-0">
         Back to {APP_CONFIG.name}
       </Link>
     </>

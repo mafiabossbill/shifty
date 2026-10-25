@@ -7,7 +7,7 @@
 import * as React from "react";
 
 import { formatDate, formatDuration, formatMonth, spokenDuration, weekdayShort } from "@/lib/format";
-import { sessionsHref, spanLabel } from "@/lib/insights/labels";
+import { durationsByRow, sessionsHref, spanLabel } from "@/lib/insights/labels";
 import type { BarDatum, BarsModel } from "@/lib/insights/model";
 import { hourScale, hourTick, labelEvery } from "@/lib/insights/scale";
 import type { LocalDate } from "@/lib/time/zone";
@@ -46,6 +46,8 @@ export function BarsCard({ bars, today, className }: { bars: BarsModel; today: L
   const title = bars.unit === "day" ? (bars.matchesRange ? "Net per day" : "Last 7 days") : bars.unit === "week" ? "Net per week" : "Net per month";
   const empty = bars.totalMs === 0 && bars.data.every((d) => d.breakMs === 0) ? (bars.matchesRange ? "No time in this range yet." : "No time in the last 7 days.") : null;
   const active = ix.active !== null ? bars.data[ix.active] : null;
+  const netText = durationsByRow(bars.data, (d) => d.key, (d) => d.netMs);
+  const breakText = durationsByRow(bars.data, (d) => d.key, (d) => d.breakMs);
 
   return (
     <ChartCard
@@ -66,8 +68,8 @@ export function BarsCard({ bars, today, className }: { bars: BarsModel; today: L
           rowKey={(d) => d.key}
           columns={[
             { label: bars.unit === "day" ? "Date" : bars.unit === "week" ? "Week" : "Month", cell: (d) => barTitle(d, bars.unit, today) },
-            { label: "Net", numeric: true, cell: (d) => <DrillLink href={sessionsHref(d.sessionIds)}>{formatDuration(d.netMs)}</DrillLink> },
-            { label: "Breaks", numeric: true, cell: (d) => formatDuration(d.breakMs) },
+            { label: "Net", numeric: true, cell: (d) => <DrillLink href={sessionsHref(d.sessionIds)}>{netText.get(d.key)}</DrillLink> },
+            { label: "Breaks", numeric: true, cell: (d) => breakText.get(d.key) },
             { label: "Target", numeric: true, cell: (d) => (d.goalMs ? formatDuration(d.goalMs) : "—") },
           ]}
           foot={["Total", formatDuration(bars.totalMs), formatDuration(bars.data.reduce((s, d) => s + d.breakMs, 0)), ""]}

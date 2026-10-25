@@ -1,5 +1,5 @@
 /** Copy for Insights: range names, mode explanations, neutral deltas and drill-down links. */
-import { formatDate, formatDuration, formatMonth, type ClockFormat } from "@/lib/format";
+import { formatDate, formatDuration, formatDurationParts, formatMonth, type ClockFormat } from "@/lib/format";
 import type { AllocationMode, DateRange } from "@/lib/reports";
 import { daysBetween, type LocalDate } from "@/lib/time/zone";
 
@@ -83,6 +83,15 @@ export function clockLabel(minuteOfDay: number, clock: ClockFormat = "24h"): str
   if (clock === "24h") return `${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
   const h12 = h % 12 === 0 ? 12 : h % 12;
   return `${h12}${mm ? `:${String(mm).padStart(2, "0")}` : ""}${h < 12 ? "am" : "pm"}`;
+}
+
+/**
+ * Per-row durations for a table with a total, keyed by row and apportioned so the rows add up to the total shown
+ * (`formatDuration` of their sum). Pass rows oldest first: today's growing time then never shifts older rows.
+ */
+export function durationsByRow<T>(rows: readonly T[], key: (row: T) => string, ms: (row: T) => number): Map<string, string> {
+  const text = formatDurationParts(rows.map(ms));
+  return new Map(rows.map((r, i) => [key(r), text[i]]));
 }
 
 /** "12 sessions", "1 session". */

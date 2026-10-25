@@ -136,8 +136,10 @@ export function PrivacySettings() {
               return (
                 <li key={p.fixId} className="flex items-center gap-3 px-4 py-3 sm:px-5">
                   <div className="grid min-w-0 flex-1 gap-0.5">
-                    <Link href={`/sessions/view?id=${p.sessionId}`} className="truncate text-sm font-medium hover:underline focus-ring rounded">
-                      {formatDate(localDateOf(p.sessionStartedAt, zone), { thisYear })} · {p.sessionTitle}
+                    <Link href={`/sessions/view?id=${p.sessionId}`} className="flex min-h-11 min-w-0 items-center rounded text-sm font-medium hover:underline focus-ring md:min-h-0">
+                      <span className="truncate">
+                        {formatDate(localDateOf(p.sessionStartedAt, zone), { thisYear })} · {p.sessionTitle}
+                      </span>
                     </Link>
                     <span className="text-xs text-muted-foreground">
                       {EVENT_WORDS[p.event]} at {formatTime(p.at, zone, s.clock)}

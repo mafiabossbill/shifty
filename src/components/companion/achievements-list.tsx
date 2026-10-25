@@ -36,7 +36,7 @@ export function AchievementsList({ rows, zone, today, sessionExists }: { rows: A
                   <span className="font-medium text-brand-strong">Not yet</span>
                 )}
                 {r.earned && r.sourceSessionId && sessionExists(r.sourceSessionId) ? (
-                  <Link href={`/sessions/view?id=${r.sourceSessionId}`} className="text-brand underline-offset-4 hover:underline focus-ring rounded">
+                  <Link href={`/sessions/view?id=${r.sourceSessionId}`} className="inline-flex min-h-11 items-center rounded text-brand underline-offset-4 hover:underline focus-ring md:min-h-0">
                     See the session
                   </Link>
                 ) : null}
