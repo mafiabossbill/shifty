@@ -48,7 +48,7 @@ export function SegmentedControl<T extends string>({
       loop
       className={cn(
         "inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-control border border-border bg-raised p-1 [scrollbar-width:none]",
-        fullWidth && "flex w-full",
+        fullWidth ? "flex w-full" : "w-fit",
         className,
       )}
     >
