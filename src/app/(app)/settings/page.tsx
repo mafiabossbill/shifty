@@ -1,39 +1,21 @@
 import type { Metadata } from "next";
-import { Settings2Icon } from "lucide-react";
 
-import { Page, PageHeader, PageSection } from "@/components/shell/page";
-import { AccentSetting, MotionSetting, ThemeSetting } from "@/components/theme/theme-setting";
-import { Card } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
+import { SessionSettings } from "@/components/settings/session-settings";
+import { SettingsMenu } from "@/components/settings/settings-menu";
 
 export const metadata: Metadata = { title: "Settings" };
 
-/**
- * Placeholder: the Settings lane replaces this body (goal, timezone, reminders, privacy, data, account).
- * Appearance already works on this device.
- */
+/** Phones/tablets: the grouped menu. From 1024px the side nav is the menu, so this shows Your sessions. */
 export default function SettingsPage() {
   return (
-    <Page width="narrow">
-      <PageHeader title="Settings" />
-      <div className="grid gap-8">
-        <PageSection title="Appearance">
-          <Card className="gap-5">
-            <div className="grid gap-2">
-              <p className="text-sm font-medium">Theme</p>
-              <ThemeSetting />
-            </div>
-            <div className="grid gap-2">
-              <p className="text-sm font-medium">Accent</p>
-              <AccentSetting />
-            </div>
-            <div className="border-t border-border pt-2">
-              <MotionSetting />
-            </div>
-          </Card>
-        </PageSection>
-        <EmptyState icon={<Settings2Icon />} title="Your goal, time zone, reminders and data controls come here next." />
+    <>
+      <h1 className="sr-only lg:hidden">Settings</h1>
+      <div className="lg:hidden">
+        <SettingsMenu />
       </div>
-    </Page>
+      <div className="hidden lg:block">
+        <SessionSettings />
+      </div>
+    </>
   );
 }
