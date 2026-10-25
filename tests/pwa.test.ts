@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -30,12 +30,43 @@ describe("PWA", () => {
     expect((buildManifest().icons ?? []).some((i) => i.purpose === "maskable")).toBe(true);
   });
 
-  it("service worker only handles same-origin navigations and caches nothing else", () => {
-    expect(sw).toMatch(/request\.mode !== "navigate"/);
-    expect(sw).toMatch(/origin !== self\.location\.origin/);
-    expect(sw).not.toMatch(/cache\.put\(/);
-    expect(sw).not.toMatch(/\/api\//);
-    // Only the offline page and one icon are precached.
-    expect(sw).toMatch(/const PRECACHE = \[OFFLINE_URL, "\/icons\/icon-192\.png"\]/);
+  it("manifest: shortcuts, launch handling and categories", () => {
+    const manifest = buildManifest();
+    expect(manifest.id).toBe("/");
+    expect(manifest.display_override).toEqual(["standalone"]);
+    expect(manifest.launch_handler).toEqual({ client_mode: "navigate-existing" });
+    expect(manifest.categories).toEqual(["productivity", "utilities"]);
+    const shortcuts = manifest.shortcuts ?? [];
+    expect(shortcuts.map((s) => [s.name, s.url])).toEqual([
+      ["Clock in", "/?action=clock-in"],
+      ["Sessions", "/sessions"],
+      ["Insights", "/insights"],
+    ]);
+    for (const shortcut of shortcuts) {
+      expect(shortcut.url.startsWith("/")).toBe(true);
+      for (const icon of shortcut.icons ?? []) expect(existsSync(path.join(root, "public", icon.src))).toBe(true);
+    }
+  });
+
+  it("service worker: versioned caches, never /api, /auth, other origins or non-GET (behaviour in pwa-sw.test.ts)", () => {
+    expect(sw).toMatch(/const VERSION = "v\d+"/);
+    expect(sw).toMatch(/shifty-shell-\$\{VERSION\}/);
+    expect(sw).toMatch(/shifty-static-\$\{VERSION\}/);
+    expect(sw).toMatch(/request\.method !== "GET"\) return/);
+    expect(sw).toMatch(/url\.origin !== self\.location\.origin\) return/);
+    expect(sw).toMatch(/NEVER_INTERCEPT = \[\/\^\\\/api/);
+    expect(sw).toMatch(/credentials: "omit"/);
+    expect(sw).toMatch(/"SKIP_WAITING"/);
+  });
+
+  it("serves /sw.js with no-cache so updates roll out", () => {
+    const config = readFileSync(path.join(root, "next.config.ts"), "utf8");
+    expect(config).toMatch(/source: "\/sw\.js"[\s\S]*?no-cache/);
+  });
+
+  it("offline page is self-contained (no external assets)", () => {
+    const html = readFileSync(path.join(root, "public/offline.html"), "utf8");
+    expect(html).not.toMatch(/<link[^>]+href=|<script[^>]+src=|<img[^>]+src=|url\(/);
+    expect(html).not.toMatch(/https?:\/\//);
   });
 });

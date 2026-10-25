@@ -176,7 +176,12 @@ export class ShiftStore {
   constructor(private readonly deps: StoreDeps) {
     this.profile = emptyProfile(this.zone(), 0);
     this.view = this.buildView();
+    this.initialView = this.view;
   }
+
+  /** What the server rendered (never ready): used for SSR and hydration so markup always matches. */
+  private readonly initialView: StoreView;
+  getServerSnapshot = () => this.initialView;
 
   // ─── Lifecycle ────────────────────────────────────────────────────────────
   async init(): Promise<void> {
@@ -379,6 +384,8 @@ export class ShiftStore {
     if (this.undoTimer) clearTimeout(this.undoTimer);
     this.undoTimer = null;
     this.undo = undo;
+    this.view = { ...this.view, undo };
+    this.listeners.forEach((l) => l());
     if (undo) {
       this.undoTimer = setTimeout(() => {
         this.undo = null;
