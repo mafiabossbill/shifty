@@ -1,37 +1,37 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { LogOutIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { signOut } from "@/lib/auth-actions";
+import { SyncStatusSlot } from "@/components/shell/slots";
 import { titleFor } from "@/lib/nav";
-import { ROLE_LABELS, type Role } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 
-// pt-safe: clear of the status bar if the installed app draws under it (landscape notch too).
-const headerClass =
-  "flex min-h-[50px] shrink-0 items-center gap-2 border-b bg-background pt-safe pr-[max(1rem,env(safe-area-inset-right,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] md:px-5";
+/*
+ * Phones/tablets: the page title, large, with the sync state on the right. From 1024px the page
+ * header carries the big title, so the bar shows it small as a quiet location line.
+ * The visible title here is aria-hidden: every page renders its own <h1> (PageHeader).
+ * pt-safe: clear of the status bar when the installed app draws under it.
+ */
+const barClass = cn(
+  "order-0 flex shrink-0 items-center gap-3 bg-background pt-safe",
+  "min-h-[calc(3.5rem+env(safe-area-inset-top,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] pl-[max(1.25rem,env(safe-area-inset-left,0px))]",
+  "md:pr-6 md:pl-6 lg:min-h-14 lg:border-b lg:border-border lg:px-10",
+);
 
 /** Loading state: the bare bar, without reading the URL (so it can be prerendered). */
-export function TopbarFrame() {
-  return <header className={headerClass} />;
+export function TopBarFrame() {
+  return <header className={barClass} />;
 }
 
-export function Topbar({ user }: { user: { name: string; role: Role } }) {
+export function TopBar() {
   const pathname = usePathname();
   return (
-    <header className={headerClass}>
-      <span className="min-w-0 truncate text-sm font-semibold md:text-[13px] md:font-medium">{titleFor(pathname)}</span>
+    <header className={barClass}>
+      <span aria-hidden className="min-w-0 truncate font-display text-[22px] font-semibold tracking-tight lg:text-sm lg:font-medium lg:tracking-normal lg:text-muted-foreground">
+        {titleFor(pathname)}
+      </span>
       <div className="ml-auto flex shrink-0 items-center gap-2">
-        <div className="hidden max-w-40 text-right leading-tight sm:block">
-          <div className="truncate text-xs font-medium">{user.name}</div>
-          <div className="truncate text-[11px] text-muted-foreground">{ROLE_LABELS[user.role]}</div>
-        </div>
-        <form action={signOut}>
-          <Button type="submit" variant="ghost" size="icon-sm" title="Sign out" aria-label="Sign out">
-            <LogOutIcon className="size-3.5" />
-          </Button>
-        </form>
+        <SyncStatusSlot />
       </div>
     </header>
   );

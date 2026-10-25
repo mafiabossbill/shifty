@@ -1,6 +1,7 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { supabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/server";
 import { safeNextPath } from "@/lib/utils";
 
@@ -12,6 +13,8 @@ import { safeNextPath } from "@/lib/utils";
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const next = safeNextPath(params.get("next"));
+  // Device mode: no accounts here; /login explains.
+  if (!supabaseConfigured()) return NextResponse.redirect(new URL("/login", request.url));
   const supabase = await createClient();
 
   const code = params.get("code");

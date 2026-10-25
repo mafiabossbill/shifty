@@ -5,64 +5,80 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /*
- * Button conventions — every action is a real <Button>, never link-styled text:
- *   default      primary action of a view or dialog (New Task, Save, Approve); one per area.
- *   secondary    supporting action that still needs weight (Restore, Rename, Change…).
- *   outline      toolbar controls and row actions (Filter, Columns, Export, View).
- *   ghost        low-emphasis or dense actions (Clear, Reset, Discard, icon-only close/remove).
- *   destructive  Delete / Remove / Archive / Deactivate; always behind useConfirm().
- *   link         navigation inside prose only — not for actions.
- * Sizes: default for forms and dialogs, sm for toolbars, xs for in-row actions, icon-* for
- * icon-only buttons (these need an aria-label). Leading icons go before the label.
+ * One button system. Every action is a real <Button>, never link-styled text.
+ *   primary    the one main action of an area (Clock in, Save). `default` is an alias.
+ *   secondary  supporting action with weight (Add break, Edit).
+ *   soft       accent-tinted, a friendly second action (Retry location, Add note).
+ *   ghost      low emphasis, dense or icon-only (Close, More).
+ *   outline    toolbar controls (Filter, Export).
+ *   danger     Delete / Discard / Empty trash; always behind useConfirm(). `destructive` is an alias.
+ *   link       navigation inside prose only.
+ * Sizes: sm (toolbars, rows) · md (forms, dialogs; default) · lg (sheet footers, phone CTAs)
+ *        xl (THE big round CLOCK IN / CLOCK OUT) · icon-sm · icon · icon-lg (icon-only: needs aria-label).
+ * Phones get 44px+ controls; on any touch screen the hit area is at least 44px (globals.css, via data-touch-target).
  */
 const buttonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md text-[13px] font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+  [
+    "relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium select-none",
+    "transition-[background-color,color,box-shadow,transform,filter] duration-150 ease-out motion-safe:active:scale-[0.98]",
+    "focus-ring disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  ].join(" "),
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 active:bg-primary/80",
-        destructive: "bg-destructive-strong text-white shadow-xs hover:bg-destructive-strong/90 active:bg-destructive-strong/80",
-        outline: "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground active:bg-accent dark:bg-input/30 dark:hover:bg-accent",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 active:bg-secondary/70",
-        ghost: "hover:bg-accent hover:text-accent-foreground active:bg-accent",
-        link: "text-primary underline-offset-4 hover:underline",
+        primary: "bg-primary text-primary-foreground shadow-primary hover:brightness-110 active:brightness-95",
+        secondary: "border border-border bg-raised text-foreground hover:bg-accent active:bg-accent",
+        soft: "bg-brand-soft text-brand-strong hover:bg-brand-soft/70 active:bg-brand-soft/60",
+        ghost: "text-foreground hover:bg-accent active:bg-accent",
+        outline: "border border-border-strong bg-transparent text-foreground hover:bg-accent active:bg-accent",
+        danger: "bg-destructive-strong text-danger-foreground hover:brightness-110 active:brightness-95",
+        link: "h-auto px-0 text-brand underline-offset-4 hover:underline",
+        // Template aliases.
+        default: "bg-primary text-primary-foreground shadow-primary hover:brightness-110 active:brightness-95",
+        destructive: "bg-destructive-strong text-danger-foreground hover:brightness-110 active:brightness-95",
       },
-      // Phones get a step up; on any touch screen the hit area is at least 44px (globals.css).
       size: {
-        default: "h-8 px-3 max-md:h-10 max-md:px-4",
-        xs: "h-6 gap-1 px-2 text-xs max-md:h-8 max-md:px-2.5 [&_svg:not([class*='size-'])]:size-3",
-        sm: "h-7 px-2.5 text-xs max-md:h-9 max-md:px-3",
-        lg: "h-9 px-4 max-md:h-11",
-        icon: "size-8 max-md:size-10",
-        "icon-sm": "size-7 max-md:size-9",
-        "icon-xs": "size-6 max-md:size-8 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-10 px-3.5 text-sm md:h-9 md:px-3 md:text-[13px]",
+        md: "h-11 px-5 text-sm md:h-10 md:px-4",
+        lg: "h-13 px-6 text-base font-semibold md:h-12",
+        xl: "h-18 min-w-56 rounded-full px-10 font-display text-lg font-semibold tracking-wide md:h-16 [&_svg:not([class*='size-'])]:size-5",
+        "icon-sm": "size-10 md:size-9",
+        icon: "size-11 md:size-10",
+        "icon-lg": "size-13 rounded-full md:size-12 [&_svg:not([class*='size-'])]:size-5",
+        // Template aliases.
+        default: "h-11 px-5 text-sm md:h-10 md:px-4",
+        xs: "h-8 gap-1 rounded-lg px-2.5 text-xs md:h-7 md:px-2 [&_svg:not([class*='size-'])]:size-3.5",
+        "icon-xs": "size-8 rounded-lg md:size-7 [&_svg:not([class*='size-'])]:size-3.5",
       },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default",
+      variant: "primary",
+      size: "md",
     },
   },
 );
 
-function Button({
-  className,
-  variant,
-  size,
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
+type ButtonProps = React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
+    /** Render the child element (e.g. a next/link <Link>) with button styles. */
     asChild?: boolean;
-  }) {
+  };
+
+function Button({ className, variant, size, asChild = false, type, ...props }: ButtonProps) {
   const Comp = asChild ? Slot.Root : "button";
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      // Radix triggers (`DropdownMenuTrigger asChild`…) replace data-slot with their own; this attribute survives the
+      // merge, so the 44px touch hit area in globals.css applies to every Button.
+      data-touch-target=""
+      // A <button> inside a <form> submits by default; make that an explicit choice.
+      type={asChild ? undefined : (type ?? "button")}
+      className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />
   );
 }
 
-export { Button, buttonVariants };
+export { Button, buttonVariants, type ButtonProps };

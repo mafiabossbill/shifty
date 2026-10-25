@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, ApiError } from "@/lib/api-client";
 import type { DeletionImpact } from "@/lib/data/account";
+import { useShiftStore } from "@/lib/store/react";
 
 export function AccountData({ email }: { email: string }) {
   const [open, setOpen] = React.useState(false);
@@ -61,12 +62,15 @@ function DeleteAccountDialog({ email, open, onOpenChange }: { email: string; ope
   const blocked = impact?.filter((w) => w.outcome === "blocked") ?? [];
   const deleted = impact?.filter((w) => w.outcome === "deleted") ?? [];
   const matches = typed.trim().toLowerCase() === email.toLowerCase();
+  const store = useShiftStore();
 
   async function confirm() {
     setPending(true);
     setError(null);
     try {
       await api.deleteAccount(typed);
+      // The account is gone: its copy on this device goes too (sessions, locations, notes).
+      await store.wipeDevice();
       // The server signed the session out; refresh drops every cached view of it.
       router.replace("/login");
       router.refresh();

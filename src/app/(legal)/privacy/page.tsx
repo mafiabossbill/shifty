@@ -21,20 +21,31 @@ export default function PrivacyPage() {
 
       <h2>Who is responsible</h2>
       <p>
-        We are the controller of your account data. When an organization (your employer or a client) gives you access, that
-        organization decides what is recorded in its workspace and is responsible for that content; we process it on its
-        behalf and only on its instructions.
+        {app} is a personal work-time tracker. We are the controller of your account and of the tracking data you sync. Your
+        sessions are private to you: nobody else on {app} — not a workspace admin, not another member — can see your shifts,
+        locations, notes, pay or ratings.
       </p>
 
       <h2>What we collect</h2>
       <ul>
-        <li>Account: name, email address, password (stored only as a secure hash), your role and the workspaces you belong to.</li>
-        <li>Content: records, comments and files you or your organization add to {app}.</li>
+        <li>Account (only if you create one): name, email address, password (stored only as a secure hash).</li>
+        <li>
+          Work time: when each session started and ended, breaks, the timezone used for your reports, goals, titles, notes,
+          tags, projects, corrections you make (with the reason) and the device events behind them.
+        </li>
+        <li>
+          Location — only if you allow it, and only at the moment you clock in, clock out or tap &quot;Try again&quot;: coordinates,
+          their accuracy and the time they were captured, plus the name of a place you saved yourself. {app} never tracks you in
+          the background and never sends coordinates to a mapping or geocoding service.
+        </li>
+        <li>Optional: hourly pay rate (for estimates), mood and energy ratings, remembered places, companion and reward progress.</li>
         <li>Usage and device: sign-in times, IP address, browser and device type, and error logs needed to run the service securely.</li>
-        <li>Communications: messages you send us and the emails we send you about your account.</li>
         <li>Cookies: only the ones needed to keep you signed in and remember settings (see the <Link href="/cookies">cookie notice</Link>).</li>
       </ul>
-      <p>We do not collect special categories of data (health, religion, biometrics) unless your organization chooses to record them.</p>
+      <p>
+        Without an account, everything stays in your browser on this device and nothing is sent to us. Signing out or erasing
+        the device deletes that local copy.
+      </p>
 
       <h2>Why we use it, and on what basis</h2>
       <ul>
@@ -67,8 +78,8 @@ export default function PrivacyPage() {
         </tbody>
       </table>
       <p>
-        Also: the admins of the workspaces you belong to (they see your name, email and role), and authorities when the law
-        requires it. If we sell or merge the business, the new owner must honour this policy.
+        Also: authorities when the law requires it. Workspace admins see only your name, email and role — never your tracking
+        data. If we sell or merge the business, the new owner must honour this policy.
       </p>
 
       <h2>International transfers</h2>
@@ -79,22 +90,23 @@ export default function PrivacyPage() {
 
       <h2>How long we keep it</h2>
       <ul>
-        <li>Account and content: while your account or your organization&apos;s workspace is active.</li>
-        <li>After you delete your account: removed within {LEGAL.retention.deletionCompletesWithinDays} days; records your organization must keep stay with your name removed.</li>
+        <li>Account and tracking data: until you delete it. Sessions you delete go to the trash until you empty it.</li>
+        <li>Location points: 90 days by default; choose 30 days, a year or &quot;keep&quot; in Settings → Privacy, or delete any or all of them there at any time.</li>
+        <li>After you delete your account: everything is removed within {LEGAL.retention.deletionCompletesWithinDays} days.</li>
         <li>Server logs: {LEGAL.retention.serverLogsDays} days. Backups: overwritten within {LEGAL.retention.backupsDays} days.</li>
       </ul>
 
       <h2>Security</h2>
       <p>
-        Data is encrypted in transit (HTTPS) and at rest. Every workspace is isolated by database rules, access is limited by
-        role, and changes are recorded in an audit log. No system is perfectly secure: if a breach affects you, we will tell
+        Data is encrypted in transit (HTTPS) and at rest. Database rules let only you read your tracking data, and every
+        correction you make is kept in your own history. No system is perfectly secure: if a breach affects you, we will tell
         you and the regulator as the law requires.
       </p>
 
       <h2>Your rights</h2>
       <ul>
         <li>Access and portability: download everything about you from Settings → Your data, at any time.</li>
-        <li>Correction: change your name in the app, or ask us or your workspace admin.</li>
+        <li>Correction: edit any session (with a reason, kept in its history) or your name in the app.</li>
         <li>Deletion: delete your account from Settings → Your data (see <Link href="/data-deletion">how deletion works</Link>).</li>
         <li>Objection and restriction: ask us to stop or limit a use of your data.</li>
         <li>Withdrawing consent: for anything based on consent, at any time, without affecting what came before.</li>

@@ -46,11 +46,22 @@ vi.mock("@/lib/current-user", async () => {
 
 const { GET: exportData } = await import("@/app/api/account/export/route");
 const { GET: impact, DELETE: remove } = await import("@/app/api/account/route");
-const del = (body: unknown) => new Request("http://test", { method: "DELETE", body: JSON.stringify(body) });
+const del = (body: unknown, headers: Record<string, string> = {}) =>
+  new Request("http://test", { method: "DELETE", body: JSON.stringify(body), headers: { "Content-Type": "application/json", ...headers } });
 
 describe("account self-service", () => {
   beforeEach(() => {
     Object.assign(state, { signedIn: true, rpcError: null, calls: [], signedOut: false });
+    // Placeholder project: the Supabase client is mocked, nothing is ever called.
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.test");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-test-key");
+  });
+
+  it("answers 503 on a deployment without accounts (device mode)", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    expect((await exportData()).status).toBe(503);
+    expect((await impact()).status).toBe(503);
+    expect((await remove(del({ confirm_email: "x" }))).status).toBe(503);
   });
 
   it("needs a signed-in person", async () => {
@@ -90,5 +101,12 @@ describe("account self-service", () => {
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/last admin/);
     expect(state.signedOut).toBe(false);
+  });
+});
+
+describe("DELETE /api/account request checks", () => {
+  it("refuses a cross-site delete before anything else", async () => {
+    const res = await remove(del({ confirm_email: "a@b.c" }, { "Sec-Fetch-Site": "cross-site" }));
+    expect(res.status).toBe(403);
   });
 });

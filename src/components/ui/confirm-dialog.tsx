@@ -13,13 +13,13 @@ import {
 } from "@/components/ui/dialog";
 
 export interface ConfirmOptions {
-  /** e.g. "Delete project Website relaunch?": name the thing being affected. */
+  /** e.g. "Delete the shift from Mon 24 Oct?": name the thing being affected. */
   title: string;
   /** Say what happens and whether it can be undone. */
   description?: React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** Red confirm button. Use for delete, remove, deactivate and other destructive actions. */
+  /** Danger confirm button. Use for delete, discard, empty trash and other destructive actions. */
   destructive?: boolean;
 }
 
@@ -28,9 +28,9 @@ type Resolver = (confirmed: boolean) => void;
 const ConfirmContext = React.createContext<((options: ConfirmOptions) => Promise<boolean>) | null>(null);
 
 /**
- * The one confirmation dialog for the app. Mount once (app layout), then:
+ * The one confirmation dialog for the app. Mounted once (app layout), then:
  *   const confirm = useConfirm();
- *   if (!(await confirm({ title: "Delete …?", description: "This can't be undone.", destructive: true }))) return;
+ *   if (!(await confirm({ title: "Delete …?", description: "It stays in Trash for 30 days.", destructive: true }))) return;
  * Focus starts on Cancel; Escape and clicking outside both cancel.
  */
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
@@ -65,15 +65,15 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             cancelRef.current?.focus();
           }}
         >
-          <DialogHeader>
+          <DialogHeader className="pr-0">
             <DialogTitle>{options?.title}</DialogTitle>
             {options?.description ? <DialogDescription>{options.description}</DialogDescription> : null}
           </DialogHeader>
           <DialogFooter>
-            <Button ref={cancelRef} variant="outline" onClick={() => settle(false)}>
+            <Button ref={cancelRef} variant="secondary" size="md" className="max-sm:h-12" onClick={() => settle(false)}>
               {options?.cancelLabel ?? "Cancel"}
             </Button>
-            <Button variant={options?.destructive ? "destructive" : "default"} onClick={() => settle(true)}>
+            <Button variant={options?.destructive ? "danger" : "primary"} size="md" className="max-sm:h-12" onClick={() => settle(true)}>
               {options?.confirmLabel ?? (options?.destructive ? "Delete" : "Confirm")}
             </Button>
           </DialogFooter>

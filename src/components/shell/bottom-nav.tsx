@@ -1,92 +1,47 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MenuIcon } from "lucide-react";
 
 import { NavIcon } from "@/components/shell/nav-icon";
-import { Sidebar } from "@/components/shell/sidebar";
-import type { WorkspaceOption } from "@/components/shell/workspace-switcher";
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import { MAIN_NAV, visibleNav, type NavItem } from "@/lib/nav";
-import type { Capability } from "@/lib/permissions";
+import { MAIN_NAV, isActivePath } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 /*
- * Phones only (below md): the main pages within thumb reach plus More (the full
- * sidebar as a sheet). Installed, the app has no browser toolbar and a top-left
- * menu is the hardest spot to reach one-handed. Tablets and desktops keep the sidebar.
+ * Phones and tablets (below 1024px): a floating rounded bar with the five places, within thumb
+ * reach, clear of the home indicator. In the layout's flex column (not fixed), so content and
+ * sheets never hide behind it. Active tab: tinted capsule + accent icon.
  */
 
-const tabClass =
-  "flex min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 text-[10.5px] font-medium text-muted-foreground outline-none transition-colors active:bg-accent focus-visible:bg-accent";
+const tabClass = cn(
+  "flex min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-[18px] text-[0.6875rem] font-medium tracking-[-0.005em] text-muted-foreground",
+  "transition-colors duration-150 hover:text-foreground focus-ring active:bg-accent",
+);
+const activeTabClass = "bg-brand-soft text-brand-strong hover:text-brand-strong";
 
-function Bar({ items, pathname, children }: { items: NavItem[]; pathname: string | null; children?: React.ReactNode }) {
+function Bar({ pathname }: { pathname: string | null }) {
   return (
-    <nav aria-label="Primary" className="shrink-0 border-t bg-background pb-safe px-safe md:hidden">
-      <div className="flex h-(--bottom-nav-height)">
-        {items.slice(0, 4).map((item) => {
-          const active = pathname !== null && (pathname === item.href || pathname.startsWith(`${item.href}/`));
+    <nav aria-label="Primary" className="order-4 shrink-0 px-[max(0.75rem,env(safe-area-inset-left,0px))] pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] lg:hidden">
+      <div className="mx-auto flex h-16 max-w-lg items-stretch gap-0.5 rounded-[24px] border border-border bg-card/95 p-1.5 shadow-nav backdrop-blur-xl">
+        {MAIN_NAV.map((item) => {
+          const active = isActivePath(pathname, item.href);
           return (
-            <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={cn(tabClass, active && "text-foreground")}>
-              <NavIcon icon={item.icon} className="size-5" strokeWidth={active ? 2 : 1.75} />
-              <span className="truncate">{item.label}</span>
+            <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={cn(tabClass, active && activeTabClass)}>
+              <NavIcon icon={item.icon} className="size-[22px]" strokeWidth={active ? 2.1 : 1.8} />
+              <span className="max-w-full truncate">{item.label}</span>
             </Link>
           );
         })}
-        {children}
       </div>
     </nav>
   );
 }
 
-/** Same slots as the real bar, so nothing moves when it loads. */
+/** Same tabs, no active state: the prerendered fallback while the URL is unknown. */
 export function BottomNavFrame() {
-  return (
-    <Bar items={MAIN_NAV} pathname={null}>
-      <span className={tabClass} aria-hidden>
-        <MenuIcon className="size-5" strokeWidth={1.75} />
-        <span>More</span>
-      </span>
-    </Bar>
-  );
+  return <Bar pathname={null} />;
 }
 
-export function BottomNav({
-  organizationName,
-  workspaces,
-  activeWorkspaceId,
-  capabilities,
-}: {
-  organizationName: string;
-  workspaces: WorkspaceOption[];
-  activeWorkspaceId: string;
-  capabilities: Capability[];
-}) {
-  const pathname = usePathname();
-  const [open, setOpen] = React.useState(false);
-  return (
-    <Bar items={visibleNav(capabilities)} pathname={pathname}>
-      <button type="button" className={tabClass} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
-        <MenuIcon className="size-5" strokeWidth={1.75} />
-        <span>More</span>
-      </button>
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="w-72 max-w-[85vw] gap-0 p-0 sm:max-w-72" showCloseButton={false}>
-          <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <SheetDescription className="sr-only">All pages</SheetDescription>
-          {/* Any link click navigates, so close the sheet. */}
-          <div className="h-full min-h-0" onClick={(e) => (e.target as HTMLElement).closest("a") && setOpen(false)}>
-            <Sidebar
-              organizationName={organizationName}
-              workspaces={workspaces}
-              activeWorkspaceId={activeWorkspaceId}
-              capabilities={capabilities}
-              touch className="flex h-full w-full border-r-0" />
-          </div>
-        </SheetContent>
-      </Sheet>
-    </Bar>
-  );
+export function BottomNav() {
+  return <Bar pathname={usePathname()} />;
 }

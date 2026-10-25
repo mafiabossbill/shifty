@@ -3,160 +3,253 @@
 
 /* `dark:` follows the class the theme script puts on <html> (src/lib/theme.ts), not the OS. */
 @custom-variant dark (&:where(.dark, .dark *));
+/* `motion-safe:` / `motion-reduce:` also honour the in-app choice (<html data-motion="reduce">). */
+@custom-variant motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    &:where(:root:not([data-motion="reduce"]) *) {
+      @slot;
+    }
+  }
+}
+@custom-variant motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    @slot;
+  }
+  &:where([data-motion="reduce"] *) {
+    @slot;
+  }
+}
 
 /*
- * Neutral palette; color is reserved for meaning. Two themes:
- *   :root  light (default)
- *   .dark  dark (Settings → Profile → Appearance, or the device when set to System)
- * Every color in the app comes from these tokens. Components use the semantic
- * tokens (background, muted, border…) or the scales below, never raw hex.
+ * SHIFTY tokens. Two designed themes:
+ *   :root  "cream" light (default)
+ *   .dark  "ink" dark
+ * and four accents on <html data-accent="lilac|indigo|teal|peach"> (lilac default).
+ *
+ * Vocabulary (components use these, never raw hex):
+ *   background · card (surface) · raised (inset wells, chips, inputs) · popover · border · border-strong
+ *   foreground · muted-foreground
+ *   brand          the accent hue: rings, active nav, icons, links (AA as text on card and background)
+ *   brand-strong   emphasis: hover, text on brand-soft
+ *   brand-soft     tinted background (active nav, soft buttons, accent pill)
+ *   primary        button fill; primary-foreground is its text (AA)
+ *   glow           brand at low alpha, for the hero ring halo and dark-mode card glow
+ *   success · celebrate · danger · info · warning   each with -soft (tinted bg) and -ink (AA text on -soft and card)
+ *   accent         neutral hover surface (shadcn name; not the brand accent)
+ *   track          empty part of rings and bars
+ * Contrast (WCAG AA) checked on card, background and raised for every text token, both themes.
  */
 :root {
-  --radius: 0.5rem;
-  /* Phones get a bottom navigation bar (components/shell/bottom-nav.tsx). */
+  --background: #fbf8f1;
+  --foreground: #1d1a2e;
+  --card: #ffffff;
+  --card-foreground: #1d1a2e;
+  --raised: #f4efe4;
+  --popover: #ffffff;
+  --popover-foreground: #1d1a2e;
+  --muted: #f4efe4;
+  --muted-foreground: #6b6580;
+  --secondary: #f4efe4;
+  --secondary-foreground: #1d1a2e;
+  --accent: #efe8da;
+  --accent-foreground: #1d1a2e;
+  --border: #e9e2d3;
+  --border-strong: #d9d0bd;
+  --input: #ddd4c2;
+  --track: #efe8da;
+
+  --brand: #5b4ff5;
+  --brand-strong: #4a3ee0;
+  --brand-soft: #ecebff;
+  --primary: #5b4ff5;
+  --primary-foreground: #ffffff;
+  --glow: rgb(91 79 245 / 0.18);
+  --ring: var(--brand);
+
+  --success: #1f9a7d;
+  --success-soft: #e2f3ec;
+  --success-ink: #146a55;
+  --celebrate: #f08a24;
+  --celebrate-soft: #fdecd6;
+  --celebrate-ink: #9a4a05;
+  --danger: #d94a5c;
+  --danger-soft: #fbe4e6;
+  --danger-ink: #b0283f;
+  --danger-foreground: #ffffff;
+  --destructive: #c4384c;
+  --destructive-strong: #c4384c;
+  --info: #2f8fd6;
+  --info-soft: #e1f0fb;
+  --info-ink: #0d6299;
+  --warning: #d99a1e;
+  --warning-soft: #f9eecf;
+  --warning-ink: #855400;
+
+  --sidebar: #f7f2e7;
+  --sidebar-foreground: #3b3650;
+  --sidebar-accent: #efe8da;
+  --sidebar-border: #e9e2d3;
+  --overlay: rgb(29 26 46 / 0.32);
+  --overlay-subtle: rgb(29 26 46 / 0.18);
+
+  --elev-card: 0 1px 2px rgb(29 26 46 / 0.04), 0 8px 24px -12px rgb(29 26 46 / 0.1);
+  --elev-raised: 0 1px 2px rgb(29 26 46 / 0.06), 0 12px 32px -12px rgb(29 26 46 / 0.16);
+  --elev-primary: inset 0 1px 0 rgb(255 255 255 / 0.18), 0 6px 18px -8px color-mix(in oklab, var(--primary) 70%, transparent);
+  --elev-nav: 0 1px 2px rgb(29 26 46 / 0.05), 0 10px 30px -10px rgb(29 26 46 / 0.16);
+
+  --r-card: 22px;
+  --r-control: 14px;
+  /* The phone bottom bar's height (components/shell/bottom-nav.tsx): the toaster sits above it. */
   --bottom-nav-height: 0px;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.205 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.205 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.205 0 0);
-  --primary: oklch(0.235 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.235 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.54 0 0);
-  --accent: oklch(0.965 0 0);
-  --accent-foreground: oklch(0.235 0 0);
-  --destructive: oklch(0.577 0.2 27.3);
-  /* Fill behind white text (destructive buttons, badges): stays dark enough for AA in both themes. */
-  --destructive-strong: oklch(0.577 0.2 27.3);
-  --border: oklch(0.925 0 0);
-  --input: oklch(0.905 0 0);
-  --ring: oklch(0.708 0 0);
-  --sidebar: oklch(0.985 0.001 106);
-  --sidebar-foreground: oklch(0.32 0 0);
-  --sidebar-accent: oklch(0.945 0.001 106);
-  --sidebar-border: oklch(0.935 0.001 106);
-  --warning: oklch(0.56 0.15 45);
-  --danger: oklch(0.55 0.17 25);
-  /* Dimmed backdrop behind dialogs and sheets. */
-  --overlay: oklch(0 0 0 / 0.25);
-  --overlay-subtle: oklch(0 0 0 / 0.05);
 }
 
-/*
- * Dark: a near-black ink (#0C0E15, also the splash and status-bar color) with a cool,
- * low-chroma neutral ramp. Contrast is checked for AA: body text ≥ 13:1,
- * muted text ≥ 6:1 on background and on muted surfaces, status ink ≥ 6:1 on its pill.
- */
 .dark {
-  --background: #0c0e15; /* = THEME_COLORS.dark (src/lib/theme.ts) */
-  --foreground: oklch(0.94 0.004 275);
-  --card: oklch(0.2 0.012 275);
-  --card-foreground: oklch(0.94 0.004 275);
-  --popover: oklch(0.215 0.012 275);
-  --popover-foreground: oklch(0.94 0.004 275);
-  --primary: oklch(0.93 0.004 275);
-  --primary-foreground: oklch(0.2 0.012 275);
-  --secondary: oklch(0.26 0.01 275);
-  --secondary-foreground: oklch(0.93 0.004 275);
-  --muted: oklch(0.235 0.01 275);
-  --muted-foreground: oklch(0.71 0.01 275);
-  --accent: oklch(0.255 0.01 275);
-  --accent-foreground: oklch(0.94 0.004 275);
-  --destructive: oklch(0.68 0.19 25);
-  --destructive-strong: oklch(0.54 0.19 25);
-  --border: oklch(0.275 0.01 275);
-  --input: oklch(0.32 0.01 275);
-  --ring: oklch(0.56 0.01 275);
-  --sidebar: oklch(0.155 0.012 275);
-  --sidebar-foreground: oklch(0.8 0.006 275);
-  --sidebar-accent: oklch(0.245 0.01 275);
-  --sidebar-border: oklch(0.245 0.01 275);
-  --warning: oklch(0.78 0.14 65);
-  --danger: oklch(0.72 0.17 25);
-  --overlay: oklch(0 0 0 / 0.55);
-  --overlay-subtle: oklch(0 0 0 / 0.4);
+  --background: #0c0a18; /* = THEME_COLORS.dark (src/lib/theme.ts) */
+  --foreground: #f4f1ff;
+  --card: #151228;
+  --card-foreground: #f4f1ff;
+  --raised: #1d1938;
+  --popover: #1a1631;
+  --popover-foreground: #f4f1ff;
+  --muted: #1d1938;
+  --muted-foreground: #a59fc4;
+  --secondary: #1d1938;
+  --secondary-foreground: #f4f1ff;
+  --accent: #241f45;
+  --accent-foreground: #f4f1ff;
+  --border: rgb(255 255 255 / 0.08);
+  --border-strong: rgb(255 255 255 / 0.14);
+  --input: rgb(255 255 255 / 0.12);
+  --track: rgb(255 255 255 / 0.07);
+
+  --brand: #8b7bff;
+  --brand-strong: #a597ff;
+  --brand-soft: rgb(139 123 255 / 0.16);
+  --primary: #6d5dfc;
+  --primary-foreground: #ffffff;
+  --glow: rgb(139 123 255 / 0.28);
+
+  --success: #5ad1b0;
+  --success-soft: rgb(90 209 176 / 0.14);
+  --success-ink: #7fe0c4;
+  --celebrate: #ffae5a;
+  --celebrate-soft: rgb(255 174 90 / 0.14);
+  --celebrate-ink: #ffc489;
+  --danger: #ff6b7a;
+  --danger-soft: rgb(255 107 122 / 0.14);
+  --danger-ink: #ff8f9a;
+  --danger-foreground: #1a0b10;
+  --destructive: #ff6b7a;
+  --destructive-strong: #ff6b7a;
+  --info: #6cc4ff;
+  --info-soft: rgb(108 196 255 / 0.14);
+  --info-ink: #94d4ff;
+  --warning: #f4b740;
+  --warning-soft: rgb(244 183 64 / 0.14);
+  --warning-ink: #ffcf6e;
+
+  --sidebar: #100d20;
+  --sidebar-foreground: #cfcae6;
+  --sidebar-accent: #1d1938;
+  --sidebar-border: rgb(255 255 255 / 0.06);
+  --overlay: rgb(4 3 10 / 0.66);
+  --overlay-subtle: rgb(4 3 10 / 0.5);
+
+  /* Dark: no drop shadows to speak of; a 1px top highlight and a faint accent glow instead. */
+  --elev-card: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 24px 48px -32px var(--glow);
+  --elev-raised: inset 0 1px 0 rgb(255 255 255 / 0.06), 0 24px 56px -24px rgb(0 0 0 / 0.6);
+  --elev-primary: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 10px 28px -10px color-mix(in oklab, var(--brand) 75%, transparent);
+  --elev-nav: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 16px 40px -16px rgb(0 0 0 / 0.7);
 
   /*
-   * Scales flip in dark, Radix-style: step 50 is always the faintest tint of a
-   * surface and 700–900 the strongest ink, so `bg-red-50 text-red-700` (a status
-   * pill) or `border-neutral-100` (a row divider) reads right in both themes.
+   * Template scales flip in dark, Radix-style (step 50 = faintest tint, 700–900 = ink), so the few
+   * template screens that use `bg-red-50 text-red-700` read right in both themes.
    */
-  --color-neutral-50: oklch(0.205 0.01 275);
-  --color-neutral-100: oklch(0.235 0.01 275);
-  --color-neutral-200: oklch(0.29 0.01 275);
-  --color-neutral-300: oklch(0.37 0.01 275);
-  --color-neutral-400: oklch(0.5 0.01 275);
-  --color-neutral-500: oklch(0.63 0.01 275);
-  --color-neutral-600: oklch(0.73 0.008 275);
-  --color-neutral-700: oklch(0.81 0.006 275);
-  --color-neutral-800: oklch(0.88 0.005 275);
-  --color-neutral-900: oklch(0.93 0.004 275);
-  --color-neutral-950: oklch(0.96 0.003 275);
-
+  --color-neutral-50: oklch(0.21 0.03 290);
+  --color-neutral-100: oklch(0.24 0.035 290);
+  --color-neutral-200: oklch(0.29 0.035 290);
+  --color-neutral-300: oklch(0.37 0.03 290);
+  --color-neutral-400: oklch(0.5 0.03 290);
+  --color-neutral-500: oklch(0.63 0.03 290);
+  --color-neutral-600: oklch(0.74 0.03 290);
+  --color-neutral-700: oklch(0.82 0.02 290);
+  --color-neutral-800: oklch(0.88 0.015 290);
+  --color-neutral-900: oklch(0.93 0.01 290);
   --color-red-50: oklch(0.25 0.05 22);
-  --color-red-100: oklch(0.29 0.07 22);
   --color-red-200: oklch(0.35 0.09 22);
-  --color-red-300: oklch(0.44 0.12 22);
-  --color-red-400: oklch(0.58 0.16 22);
-  --color-red-500: oklch(0.64 0.19 22);
-  --color-red-600: oklch(0.7 0.17 22);
-  --color-red-700: oklch(0.78 0.13 22);
-  --color-red-800: oklch(0.84 0.1 22);
+  --color-red-500: oklch(0.68 0.19 22);
+  --color-red-700: oklch(0.8 0.12 22);
   --color-red-900: oklch(0.9 0.06 22);
-
   --color-amber-50: oklch(0.26 0.045 75);
-  --color-amber-100: oklch(0.3 0.06 75);
-  --color-amber-200: oklch(0.37 0.08 75);
-  --color-amber-300: oklch(0.47 0.1 75);
-  --color-amber-400: oklch(0.65 0.14 75);
-  --color-amber-500: oklch(0.74 0.15 75);
-  --color-amber-600: oklch(0.79 0.14 75);
-  --color-amber-700: oklch(0.83 0.12 80);
+  --color-amber-500: oklch(0.78 0.15 75);
   --color-amber-800: oklch(0.87 0.1 82);
-  --color-amber-900: oklch(0.92 0.07 85);
-
   --color-emerald-50: oklch(0.25 0.04 165);
-  --color-emerald-100: oklch(0.29 0.055 165);
-  --color-emerald-200: oklch(0.35 0.07 165);
-  --color-emerald-300: oklch(0.45 0.09 165);
-  --color-emerald-400: oklch(0.6 0.12 165);
-  --color-emerald-500: oklch(0.68 0.14 165);
-  --color-emerald-600: oklch(0.74 0.13 165);
-  --color-emerald-700: oklch(0.8 0.11 165);
-  --color-emerald-800: oklch(0.86 0.08 165);
-  --color-emerald-900: oklch(0.91 0.05 165);
-
-  --color-blue-50: oklch(0.25 0.05 260);
-  --color-blue-100: oklch(0.29 0.07 260);
-  --color-blue-200: oklch(0.35 0.09 260);
-  --color-blue-300: oklch(0.44 0.12 260);
-  --color-blue-400: oklch(0.58 0.15 260);
-  --color-blue-500: oklch(0.65 0.16 260);
-  /* Unread dots and badges (white text): keep a mid blue. */
-  --color-blue-600: oklch(0.6 0.18 260);
-  --color-blue-700: oklch(0.79 0.11 260);
-  --color-blue-800: oklch(0.85 0.08 260);
-  --color-blue-900: oklch(0.9 0.05 260);
-
-  --color-violet-50: oklch(0.25 0.05 293);
-  --color-violet-100: oklch(0.29 0.07 293);
-  --color-violet-200: oklch(0.35 0.09 293);
-  --color-violet-300: oklch(0.44 0.12 293);
-  --color-violet-400: oklch(0.58 0.15 293);
-  --color-violet-500: oklch(0.66 0.16 293);
-  --color-violet-600: oklch(0.72 0.14 293);
-  --color-violet-700: oklch(0.8 0.11 293);
-  --color-violet-800: oklch(0.86 0.08 293);
-  --color-violet-900: oklch(0.91 0.05 293);
+  --color-emerald-500: oklch(0.72 0.13 165);
+  --color-emerald-700: oklch(0.82 0.1 165);
+  --color-blue-50: oklch(0.25 0.05 245);
+  --color-blue-500: oklch(0.72 0.13 245);
+  --color-blue-700: oklch(0.82 0.09 245);
 }
 
-@media (max-width: 767px) {
+/* Accents. Lilac is the :root/.dark default above; the others override the brand set. */
+[data-accent="indigo"] {
+  --brand: #4552e0;
+  --brand-strong: #3742c4;
+  --brand-soft: #e7eafd;
+  --primary: #4552e0;
+  --primary-foreground: #ffffff;
+  --glow: rgb(69 82 224 / 0.18);
+}
+[data-accent="teal"] {
+  --brand: #0f766b;
+  --brand-strong: #0b5f56;
+  --brand-soft: #dcf2ee;
+  --primary: #0f766b;
+  --primary-foreground: #ffffff;
+  --glow: rgb(15 118 107 / 0.18);
+}
+[data-accent="peach"] {
+  --brand: #b8491f;
+  --brand-strong: #9a3b17;
+  --brand-soft: #fbe8df;
+  --primary: #b8491f;
+  --primary-foreground: #ffffff;
+  --glow: rgb(184 73 31 / 0.18);
+}
+.dark[data-accent="indigo"] {
+  --brand: #7d8bff;
+  --brand-strong: #a3adff;
+  --brand-soft: rgb(125 139 255 / 0.16);
+  --primary: #5361f0;
+  --primary-foreground: #ffffff;
+  --glow: rgb(125 139 255 / 0.28);
+}
+.dark[data-accent="teal"] {
+  --brand: #3cc8b4;
+  --brand-strong: #6fdccb;
+  --brand-soft: rgb(60 200 180 / 0.15);
+  --primary: #3cc8b4;
+  --primary-foreground: #06201c;
+  --glow: rgb(60 200 180 / 0.24);
+}
+.dark[data-accent="peach"] {
+  --brand: #ff9f80;
+  --brand-strong: #ffbba4;
+  --brand-soft: rgb(255 159 128 / 0.15);
+  --primary: #ff9f80;
+  --primary-foreground: #2a1208;
+  --glow: rgb(255 159 128 / 0.24);
+}
+
+@media (max-width: 1023px) {
   :root {
-    --bottom-nav-height: 3.5rem;
+    /* Floating bar (64px) + its 8px gap above the home indicator. */
+    --bottom-nav-height: 4.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --r-card: 18px;
   }
 }
 
@@ -165,6 +258,7 @@
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-raised: var(--raised);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
@@ -175,25 +269,125 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-strong: var(--destructive-strong);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-track: var(--track);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-soft: var(--brand-soft);
+  --color-glow: var(--glow);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-success-ink: var(--success-ink);
+  --color-celebrate: var(--celebrate);
+  --color-celebrate-soft: var(--celebrate-soft);
+  --color-celebrate-ink: var(--celebrate-ink);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-ink: var(--danger-ink);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-ink: var(--info-ink);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-ink: var(--warning-ink);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-accent: var(--sidebar-accent);
   --color-sidebar-border: var(--sidebar-border);
-  --color-warning: var(--warning);
-  --color-danger: var(--danger);
   --color-overlay: var(--overlay);
   --color-overlay-subtle: var(--overlay-subtle);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-control: var(--r-control);
+  --radius-card: var(--r-card);
+
+  --shadow-card: var(--elev-card);
+  --shadow-raised: var(--elev-raised);
+  --shadow-primary: var(--elev-primary);
+  --shadow-nav: var(--elev-nav);
+
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+/*
+ * Type scale. Body 15px on phones, 14px from tablets up (text-sm). Theme sizes step up on phones:
+ *   text-2xs 11/12 · text-xs 12/13 · text-sm 14/15 (body) · text-base 16/17 · text-lg 18/20
+ * Display presets (Outfit, tight tracking; named type-* so tailwind-merge never confuses them with colors):
+ *   type-title 20/22 (card, sheet, section titles) · type-stat 26/28 (StatTile values)
+ *   type-display 32/36 (page heroes) · type-hero 64–88px (the live timer; add `tabular`)
+ */
+@theme {
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+}
+:root {
+  --type-title: 1.25rem;
+  --type-stat: 1.625rem;
+  --type-display: 2rem;
+  --type-hero: clamp(4rem, 17vw, 5.5rem);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --text-2xs: 0.75rem; /* 11 → 12px */
+    --text-xs: 0.8125rem; /* 12 → 13px */
+    --text-sm: 0.9375rem; /* 14 → 15px */
+    --text-base: 1.0625rem; /* 16 → 17px */
+    --text-lg: 1.25rem; /* 18 → 20px */
+    --type-title: 1.375rem; /* 20 → 22px */
+    --type-stat: 1.75rem; /* 26 → 28px */
+    --type-display: 2.25rem; /* 32 → 36px */
+  }
+}
+
+@utility type-title {
+  font-family: var(--font-display);
+  font-size: var(--type-title);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+@utility type-stat {
+  font-family: var(--font-display);
+  font-size: var(--type-stat);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+@utility type-display {
+  font-family: var(--font-display);
+  font-size: var(--type-display);
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  font-weight: 600;
+}
+@utility type-hero {
+  font-family: var(--font-display);
+  font-size: var(--type-hero);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* Small caps-style labels above numbers ("NET WORKED"). */
+@utility type-eyebrow {
+  font-size: var(--text-2xs);
+  line-height: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 /* Safe areas (notch, home indicator, rounded corners) for the installed app; 0 elsewhere. */
@@ -213,13 +407,29 @@
   padding-left: env(safe-area-inset-left, 0px);
   padding-right: env(safe-area-inset-right, 0px);
 }
+/* Live timers and any number that changes in place: digits keep their width. */
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+/* The one focus ring: 2px accent with a gap, on every interactive primitive. */
+@utility focus-ring {
+  outline: none;
+  &:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   html {
-    font-feature-settings: "cv11", "ss01";
     /* No font inflation on rotate; no grey flash on tap (components draw their own :active state). */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -231,18 +441,23 @@
     overscroll-behavior: none;
   }
   body {
-    @apply bg-background text-foreground font-sans text-[13px] leading-5;
+    @apply bg-background font-sans text-sm text-foreground antialiased;
+    line-height: 1.5;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    text-wrap: balance;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--brand) 30%, transparent);
   }
   /* Scroll areas inside the shell keep their overscroll to themselves. */
   main,
   [data-scroll-area] {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    html {
-      scroll-behavior: smooth;
-    }
   }
 }
 
@@ -254,53 +469,29 @@
   input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]),
   textarea,
   select {
-    /* !important: beats the phone type scale below, which is plain class rules. */
     font-size: max(16px, 1em) !important;
   }
 }
 
 /*
- * Phones: a larger type scale, so everything reads at arm's length. Desktop keeps
- * its dense 13px. Theme sizes (text-xs/sm/base/lg) step up through their variables;
- * the fixed pixel sizes used across the app step up here. The bottom bar's 10.5px
- * labels are left alone (five tabs share 360px). Unlayered, so it wins on phones.
+ * Template screens (auth, legal, team) use fixed pixel sizes; on phones they step up to the
+ * SHIFTY phone scale. SHIFTY components use the named sizes above instead.
  */
 @media (max-width: 767px) {
-  :root {
-    --text-xs: 0.875rem; /* 12 → 14px */
-    --text-sm: 0.9375rem; /* 14 → 15px */
-    --text-base: 1.0625rem; /* 16 → 17px */
-    --text-lg: 1.25rem; /* 18 → 20px */
-    --muted-foreground: oklch(0.47 0 0);
-  }
-  .dark {
-    --muted-foreground: oklch(0.76 0.01 275);
-  }
-  body,
   .text-\[13px\],
   .text-\[14px\] {
     font-size: 15px;
   }
   .text-\[11px\],
-  .text-\[11\.5px\],
   .text-\[12px\] {
     font-size: 13px;
   }
-  .text-\[9px\],
-  .text-\[9\.5px\],
-  .text-\[10px\] {
+  .text-\[10px\],
+  .text-\[10\.5px\] {
     font-size: 11px;
   }
   .text-\[15px\] {
-    font-size: 19px;
-  }
-  .text-\[17px\] {
-    font-size: 20px;
-  }
-  .text-\[20px\],
-  .text-\[22px\] {
-    font-size: 26px;
-    line-height: 1.2;
+    font-size: 18px;
   }
 }
 
@@ -323,6 +514,20 @@
   }
 }
 
+/* Live dot (active session): a slow, quiet pulse; none when motion is reduced. */
+@keyframes shifty-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, currentColor 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in oklab, currentColor 0%, transparent);
+  }
+}
+@utility animate-live {
+  animation: shifty-pulse 2.4s ease-in-out infinite;
+}
+
 /* Theme changes swap every color at once instead of animating each transition. */
 .theme-switching,
 .theme-switching * {
@@ -337,5 +542,23 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+[data-motion="reduce"] *,
+[data-motion="reduce"] *::before,
+[data-motion="reduce"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+@media print {
+  :root,
+  .dark {
+    --background: #ffffff;
+    --card: #ffffff;
+    --foreground: #000000;
+    --elev-card: none;
   }
 }

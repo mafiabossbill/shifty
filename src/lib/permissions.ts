@@ -17,6 +17,8 @@ export const CAPABILITIES = [
   /** Organization name, timezone, currency. */
   "settings:manage",
   "audit:view",
+  /** Keep one's OWN work sessions, breaks, locations and rewards (never anyone else's, admins included). */
+  "shift:track",
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -25,10 +27,12 @@ export const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "member:manage",
     "settings:manage",
     "audit:view",
+    "shift:track",
   ],
   manager: [
   ],
   member: [
+    "shift:track",
   ],
   viewer: [
   ],
