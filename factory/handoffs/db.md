@@ -58,3 +58,37 @@ NEXT AGENT ACTION:
 - release-engineer: once SHIFTY's own Supabase project exists, `scripts/release migrate` then `npm run db:check-rls`.
 
 COMMIT: 65aa218 on lane/db (not pushed; no PR)
+
+### 2026-10-25 database-engineer — security review fixes (0105_shift_security.sql)
+AGENT: database-engineer
+TASK: db-sec — security review findings M1, M2, M3, L1, L2, L3, L7
+FILES CHANGED: supabase/migrations/0105_shift_security.sql (new); scripts/check-rls.ts; supabase/local/shift-fixture.ts; tests/migrations.test.ts; docs/SCHEMA.md; factory/handoffs/db.md
+WHAT WAS IMPLEMENTED:
+- M1: deleting a session (purge RPC or direct DELETE) turns its events into tombstones `{id, type, sessionId, at}` + flag `purged` (trigger `shift_sessions_tombstone_events`, security definer, `search_path = ''`; skipped while the account/workspace itself is being deleted).
+- M2: SELECT and DELETE policies on all 12 SHIFTY tables are `user_id = (select auth.uid())` only. INSERT/UPDATE and `commit_shift_event` still need org + `shift:track`. Append-only tables still have no DELETE policy. Export and load work for demoted or deactivated people.
+- M3: redaction compares fix ids as uuid (`private.fix_uuid`: malformed ids → null, no cast error). `delete_location_fixes` doesn't compare ids (it passes null = all), so it was unchanged.
+- L1: `import_session` is in `shift_events_type_check`; redaction also blanks matching `payload.session.locations[]`.
+- L2: an event id held by someone else raises 23505 `shift_events_pkey` (`event_id_taken`), never `duplicate`. The backend's existing 23505 → `unique_violation` mapping covers it.
+- L3: CHECKs — settings, companion state and revision snapshots ≤ 64 kB; event payload ≤ 256 kB; event flags ≤ 16. Session title ≤ 120 and notes ≤ 4000 already existed (0102).
+- L7: `redact_location_events` runs with `search_path = ''` and qualified names.
+IMPORTANT DECISIONS: `commit_shift_event` is redefined in 0105 (same signature and contract). Its purge branch relies on the trigger instead of calling redaction. 0100–0104 are untouched. A demoted person's `delete_location_fixes` deletes fixes and redacts events, but can't bump the session revision (the UPDATE needs `shift:track`); acceptable, since they can no longer commit.
+DEPENDENCIES: merged claude/relaxed-davinci-y8k5u9 into lane/db first (fast-forward to c3af1c1); reducer `import_session` from the domain lane.
+KNOWN RISKS: ids come back lowercase from uuid columns; if a client ever sends uppercase uuids, `load_shift_state()` won't deep-equal the device state (not tested). The earlier risks still apply (equal-instant reducer edge case, project sync order). Live `npm run db:check-rls` still not run (no SHIFTY project).
+TESTS RUN: `npm run db:local-check` · `npm run lint` · `npm run typecheck` · `npx vitest run`. Mutations in scratch copies: without 0105 → 27 FAIL; with only the tombstone trigger dropped → 5 FAIL (all M1 checks).
+TEST RESULTS: db:local-check PASS, 91 checks (31 foundation + 60 SHIFTY; 24 reducer steps). lint clean · typecheck clean · vitest 35 files / 333 tests passed. Tail:
+```
+PASS  shift_case_foreign_event_id = "23505 shift_events_pkey"
+PASS  shift_purged_events_tombstoned = 4
+PASS  shift_purged_text_left = 0
+PASS  shift_import_fix_redacted = 2
+PASS  shift_settings_size = "23514 user_settings_settings_size"
+PASS  shift_event_payload_size = "23514 shift_events_payload_size"
+PASS  shift_demoted_sessions = 4
+PASS  shift_demoted_commit = "42501"
+PASS  shift_direct_delete_untombstoned = 0
+PASS  shift_deactivated_sessions = 3
+Organization isolation and role rules hold (91 checks, incl. SHIFTY).
+Local migration + RLS check passed (Supabase stub; run npm run db:check-rls against the real project too).
+```
+NEXT AGENT ACTION: security-reviewer — re-review 0105. backend-engineer — optionally map 23514 `*_size` to 413 and treat `shift_events_pkey` 23505 as a conflict (it already falls into `unique_violation`).
+COMMIT: 21eae5f on lane/db (not pushed)
