@@ -3,21 +3,97 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>You're offline</title>
+    <meta name="theme-color" content="#fbf8f1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0c0a18" media="(prefers-color-scheme: dark)" />
+    <title>SHIFTY · Not ready offline yet</title>
     <style>
-      :root { color-scheme: light dark; }
-      body { margin: 0; min-height: 100dvh; display: grid; place-items: center; font: 15px/1.5 system-ui, sans-serif; background: #fff; color: #222; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom); }
-      @media (prefers-color-scheme: dark) { body { background: #0c0e15; color: #eceef3; } p { color: #a6a9b3; } }
-      main { max-width: 320px; text-align: center; }
-      h1 { font-size: 17px; margin: 0 0 4px; }
-      p { margin: 0 0 16px; color: #666; }
-      button { font: inherit; padding: 10px 16px; border-radius: 8px; border: 1px solid #ccc; background: transparent; color: inherit; min-height: 44px; }
+      :root {
+        color-scheme: light dark;
+        --bg: #fbf8f1;
+        --card: #ffffff;
+        --ink: #1b1830;
+        --muted: #5f5a75;
+        --border: #e7e1d3;
+        --accent: #6b5ce7;
+        --accent-ink: #ffffff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0c0a18;
+          --card: #17142a;
+          --ink: #f1eefc;
+          --muted: #a8a3c2;
+          --border: #2a2545;
+          --accent: #8b7bff;
+          --accent-ink: #0c0a18;
+        }
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        background: var(--bg);
+        color: var(--ink);
+        font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      }
+      main {
+        width: 100%;
+        max-width: 360px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px 24px 24px;
+        text-align: center;
+      }
+      .mark {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        border-radius: 16px;
+        display: grid;
+        place-items: center;
+        background: color-mix(in oklab, var(--accent) 16%, transparent);
+        color: var(--accent);
+      }
+      h1 { font-size: 20px; line-height: 1.3; margin: 0 0 8px; letter-spacing: -0.01em; }
+      p { margin: 0 0 12px; color: var(--muted); }
+      ol { text-align: left; margin: 0 0 20px; padding-left: 20px; color: var(--muted); }
+      li { margin: 4px 0; }
+      button {
+        font: inherit;
+        font-weight: 600;
+        width: 100%;
+        min-height: 48px;
+        border-radius: 14px;
+        border: 0;
+        background: var(--accent);
+        color: var(--accent-ink);
+        cursor: pointer;
+      }
+      button:focus-visible { outline: 3px solid color-mix(in oklab, var(--accent) 45%, transparent); outline-offset: 2px; }
     </style>
   </head>
   <body>
     <main>
-      <h1>You're offline</h1>
-      <p>This app needs a connection. Nothing you saved was lost.</p>
+      <div class="mark" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="13" r="8" />
+          <path d="M12 9v4l2.5 2.5" />
+          <path d="M9 2h6" />
+        </svg>
+      </div>
+      <h1>SHIFTY isn't ready offline yet</h1>
+      <p>This page hasn't been saved to your device yet, so it can't open without a connection.</p>
+      <ol>
+        <li>Reconnect to Wi-Fi or mobile data.</li>
+        <li>Open SHIFTY once. It saves itself for offline use.</li>
+        <li>After that it opens without a connection.</li>
+      </ol>
+      <p>Shifts you already logged on this device are safe.</p>
       <button type="button" onclick="location.reload()">Try again</button>
     </main>
   </body>
