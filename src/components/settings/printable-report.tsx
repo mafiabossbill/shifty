@@ -21,9 +21,10 @@ import { useReadyShift } from "./use-ready-shift";
 const PRINT_CSS = `
 @media print {
   @page { margin: 14mm; }
-  html, body { background: #fff !important; }
   body *:not(:has(.shifty-print)):not(.shifty-print):not(.shifty-print *) { display: none !important; }
-  *:has(.shifty-print) { display: block !important; overflow: visible !important; height: auto !important; max-height: none !important; min-height: 0 !important; position: static !important; padding: 0 !important; margin: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }
+  *:has(.shifty-print) { display: block !important; width: auto !important; max-width: none !important; overflow: visible !important; height: auto !important; max-height: none !important; min-height: 0 !important; position: static !important; padding: 0 !important; margin: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; }
+  html:has(.shifty-print), html:has(.shifty-print) body { background: #fff !important; color-scheme: light !important; }
+  .shifty-print { width: 100% !important; max-width: none !important; border: 0 !important; padding: 0 !important; }
   .shifty-print, .shifty-print * { color: #111 !important; background: transparent !important; box-shadow: none !important; border-color: #d4d4d4 !important; }
   .shifty-print { font-size: 11pt; }
   .shifty-print .print-hide { display: none !important; }

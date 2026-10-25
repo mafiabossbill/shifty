@@ -1,26 +1,33 @@
-import { SmartphoneIcon } from "lucide-react";
+"use client";
+
+import { PlatformCapabilities } from "@/components/pwa/capabilities";
+import { InstallGuide } from "@/components/pwa/install-guide";
 
 import { DemoLink } from "./demo-link";
-import { SettingsGroup, SettingsHeader } from "./parts";
+import { SettingsGroup, SettingsHeader, useSaveSettings } from "./parts";
 
-/**
- * This device. The PWA lane mounts <InstallGuide /> and <PlatformCapabilities /> from src/components/pwa/**
- * in the marked slots below (orchestrator wires them; this lane must not create those components).
- */
+/** This device: install steps and an honest capability table (both from the PWA lane), the lock-screen note, demo. */
 export function DeviceSettings() {
+  const save = useSaveSettings();
   return (
     <div className="grid gap-8">
       <SettingsHeader title="This device" description="Installing SHIFTY, and what this browser can and can't do." />
 
-      <SettingsGroup title="Install" id="install">
-        {/* PWA SLOT: <InstallGuide /> (src/components/pwa/install-guide) mounts here. */}
-        <PwaPlaceholder text="Install steps for this device will appear here." />
-      </SettingsGroup>
+      {/* Renders nothing inside the installed app. */}
+      <InstallGuide />
 
-      <SettingsGroup title="What this browser supports" id="capabilities">
-        {/* PWA SLOT: <PlatformCapabilities /> (src/components/pwa/platform-capabilities) mounts here. */}
-        <PwaPlaceholder text="Notifications, badges and storage support for this browser will appear here." />
-      </SettingsGroup>
+      <section className="grid gap-2.5" aria-labelledby="capabilities-title">
+        <h2 id="capabilities-title" className="px-1 font-display text-base font-semibold tracking-tight">
+          What this device supports
+        </h2>
+        <PlatformCapabilities
+          onPermissionChange={(permission) => {
+            // Allowing here turns reminders-as-notifications on; a refusal turns them off.
+            if (permission === "granted") void save({ notifications: true });
+            else if (permission === "denied") void save({ notifications: false });
+          }}
+        />
+      </section>
 
       <SettingsGroup title="iPhone lock screen" id="live-activity">
         <div className="grid gap-2 py-4 text-sm">
@@ -34,15 +41,6 @@ export function DeviceSettings() {
           <DemoLink />
         </div>
       </SettingsGroup>
-    </div>
-  );
-}
-
-function PwaPlaceholder({ text }: { text: string }) {
-  return (
-    <div className="flex items-center gap-3 py-4 text-sm text-muted-foreground" data-pwa-slot>
-      <SmartphoneIcon className="size-4 shrink-0" aria-hidden />
-      {text}
     </div>
   );
 }

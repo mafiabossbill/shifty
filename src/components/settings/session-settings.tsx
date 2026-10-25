@@ -8,12 +8,11 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Select } from "@/components/ui/select";
 import { SwitchRow } from "@/components/ui/switch";
 import { parseGoal, splitGoal } from "@/lib/settings/goal";
+import { notificationSupport, requestNotifications } from "@/lib/notify";
 import { REMINDER_HOURS } from "@/lib/shifts/profile";
 import { useNow } from "@/lib/store/react";
 
-import { askNotificationPermission, notificationSupport, type PermissionAnswer } from "./notifications";
 
-const subscribeNever = () => () => {};
 import { SettingRow, SettingsGroup, SettingsHeader, SettingsSkeleton, ToggleChip, useSaveSettings } from "./parts";
 import { TimezonePicker } from "./timezone-picker";
 import { useReadyShift } from "./use-ready-shift";
@@ -242,29 +241,45 @@ function HoursInput({ id, value, onSave }: { id: string; value: number; onSave: 
   );
 }
 
+type NotifyState = { supported: boolean; permission: string; needsInstall: boolean };
+
+const NO_EVENTS = () => () => {};
+// A string snapshot, so useSyncExternalStore sees a stable value between renders.
+const notifyKey = () => {
+  const n = notificationSupport();
+  return `${n.supported}|${n.permission}|${n.needsInstall}`;
+};
+const parseNotify = (key: string): NotifyState => {
+  const [supported, permission, needsInstall] = key.split("|");
+  return { supported: supported === "true", permission, needsInstall: needsInstall === "true" };
+};
+
 function NotificationsRow({ enabled, onChange }: { enabled: boolean; onChange: (on: boolean) => Promise<boolean> }) {
-  // Read live from the browser (no event exists for permission changes; re-read on every render).
-  const live = React.useSyncExternalStore(subscribeNever, notificationSupport, () => null);
-  const [asked, setPermission] = React.useState<PermissionAnswer | null>(null);
-  const permission = asked ?? live;
-  const description =
-    permission === "unsupported"
-      ? "This browser can't show notifications. Reminders still appear inside SHIFTY."
-      : permission === "denied"
-        ? "Notifications are blocked for SHIFTY in your browser settings. Reminders still appear inside the app."
-        : "Reminders as notifications while SHIFTY is open or recently open. Otherwise they show inside the app.";
+  // No browser event exists for permission changes: re-read on every render, null on the server.
+  const live = React.useSyncExternalStore(NO_EVENTS, notifyKey, () => null);
+  const [asked, setAsked] = React.useState<string | null>(null);
+  const n = live === null ? null : { ...parseNotify(live), ...(asked ? { permission: asked } : {}) };
+  const description = !n
+    ? "Reminders as notifications while SHIFTY is open or recently open."
+    : n.needsInstall
+      ? "On iPhone, reminder notifications need the home-screen app: Share, then Add to Home Screen (see This device). Reminders still appear inside SHIFTY."
+      : !n.supported
+        ? "This browser can't show notifications. Reminders still appear inside SHIFTY."
+        : n.permission === "denied"
+          ? "Notifications are blocked for SHIFTY in your browser settings. Reminders still appear inside the app."
+          : "Reminders as notifications while SHIFTY is open or recently open. Otherwise they show inside the app.";
   return (
     <SwitchRow
       id="notifications"
       title="Notifications"
       description={description}
-      checked={enabled && permission === "granted"}
-      disabled={permission === "unsupported" || permission === "denied"}
+      checked={enabled && n?.permission === "granted"}
+      disabled={!n || n.needsInstall || !n.supported || n.permission === "denied"}
       onCheckedChange={async (on) => {
         if (!on) return void onChange(false);
         // Must run inside this tap: browsers only show the prompt for a user gesture.
-        const answer = await askNotificationPermission();
-        setPermission(answer);
+        const answer = await requestNotifications();
+        setAsked(answer);
         if (answer === "granted") await onChange(true);
         else toast("Notifications weren't allowed. Reminders will show inside SHIFTY.");
       }}
