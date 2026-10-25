@@ -13,6 +13,11 @@ Consequences: <cost, follow-ups, how to revisit>
 ```
 
 ## Entries
+### D10 — No audit_logs triggers on SHIFTY tables (2026-10-25, database-engineer)
+Context: org admins can read `audit_logs`; shift data is private to its owner.
+Decision: history lives in owner-only `shift_events` (append-only) and `session_revisions`; no generic audit trigger on tracking tables. Cross-session overlap is a domain rule (explicit override allowed), not a DB constraint.
+Consequences: admins never see someone's shifts, even through the audit log.
+
 ### D09 — Supabase sync waits for SHIFTY's own project (2026-10-25, orchestrator)
 Context: the only Supabase credentials in the build environment belong to pasuax-executive-matrix; the access token can't create projects.
 Decision: never touch that project. Preview runs in device mode; sync switches on when SHIFTY's own project env vars are set (A01).
