@@ -318,3 +318,23 @@ describe("view consistency", () => {
     expect(d.store.getServerSnapshot().ready).toBe(false);
   });
 });
+
+describe("foreign data", () => {
+  it("hides another account's device data and refuses new events until erased", async () => {
+    const server = new FakeServer();
+    const d = device({ server });
+    await d.store.init();
+    await d.store.syncNow();
+    await d.store.clockIn();
+    // A different person signs in on this browser.
+    const other = { ...server.transport({ value: true }, () => d.clock.t), status: async () => ({ configured: true, signedIn: true, userId: "u2", email: "x@example.com", serverTime: d.clock.t }) };
+    const s2 = new ShiftStore({ persistence: d.persistence, transport: other, clock: () => d.clock.t, deviceTimeZone: () => DAR });
+    await s2.init();
+    await s2.syncNow();
+    expect(s2.getSnapshot().sync.mode).toBe("foreign_data");
+    expect(s2.getSnapshot().sessions).toHaveLength(0);
+    await expect(s2.clockIn()).rejects.toBeInstanceOf(ShiftActionError);
+    await s2.wipeDevice();
+    expect((await d.persistence.load()).events).toHaveLength(0);
+  });
+});

@@ -254,7 +254,9 @@ export class ShiftStore {
     this.applyDerived();
   }
 
-  private buildView(state: ShiftState = EMPTY_STATE): StoreView {
+  private buildView(folded: ShiftState = EMPTY_STATE): StoreView {
+    // Someone else is signed in: this device's data belongs to another account and stays hidden.
+    const state = this.mode === "foreign_data" ? EMPTY_STATE : folded;
     const all = Object.values(state.sessions);
     const sessionSync: Record<string, SessionSyncState> = {};
     const rank: Record<SessionSyncState, number> = { synced: 0, local: 1, syncing: 2, attention: 3 };
@@ -270,7 +272,7 @@ export class ShiftStore {
       sessions: all.filter((s) => s.deletedAt === null).sort((a, b) => b.startedAt - a.startedAt),
       trash: all.filter((s) => s.deletedAt !== null).sort((a, b) => (b.deletedAt ?? 0) - (a.deletedAt ?? 0)),
       active: activeSession(state),
-      profile: this.profile,
+      profile: this.mode === "foreign_data" ? emptyProfile(this.zone(), 0) : this.profile,
       sync: {
         mode: this.mode,
         phase: this.phase,
@@ -310,6 +312,9 @@ export class ShiftStore {
   // ─── Recording ────────────────────────────────────────────────────────────
   /** Validates against what the person sees, stores durably, then shows it. Throws ShiftActionError. */
   async record(event: ShiftEvent, opts: { holdMs?: number } = {}): Promise<ShiftSession | null> {
+    if (this.mode === "foreign_data") {
+      throw new ShiftActionError({ code: "invalid_state", message: "This device holds another account's data. Erase it in Settings → Account first." });
+    }
     const result = applyEvent(this.view.state, event);
     if (!result.ok) throw new ShiftActionError(result.error);
     const stored: StoredEvent = {

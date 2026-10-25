@@ -7,7 +7,8 @@ import type { ShiftEvent } from "./types";
 
 // 2000-01-01 … 2100-01-01: anything else is a broken clock or a forged payload.
 const instant = z.number().int().min(946_684_800_000).max(4_102_444_800_000);
-const id = z.uuid();
+// Lower-cased so ids compare equal everywhere (the DB redacts by id).
+const id = z.uuid().transform((v) => v.toLowerCase());
 const zone = z.string().refine(isValidTimeZone, "Unknown timezone");
 const text = (max: number) => z.string().max(max);
 

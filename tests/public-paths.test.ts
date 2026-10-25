@@ -41,6 +41,11 @@ describe("public paths", () => {
     expect(safeNextPath("//evil.example")).toBe("/");
     expect(safeNextPath("/\\evil.example")).toBe("/");
     expect(safeNextPath("https://evil.example")).toBe("/");
+    expect(safeNextPath("/\t/evil.example")).toBe("/");
+    expect(safeNextPath("/\n/evil.example")).toBe("/");
+    // Still encoded, it's a harmless same-origin path segment.
+    expect(safeNextPath("/%09/evil.example")).toBe("/%09/evil.example");
+    expect(safeNextPath("/sessions/view?id=1#x")).toBe("/sessions/view?id=1#x");
     expect(safeNextPath(null)).toBe("/");
   });
 });
