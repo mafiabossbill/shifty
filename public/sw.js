@@ -16,7 +16,7 @@
  * every shifty-* cache that is not the current version. /sw.js is served no-cache
  * (next.config.ts) so the browser always checks for a new worker.
  */
-const VERSION = "v1";
+const VERSION = "v2";
 const SHELL_CACHE = `shifty-shell-${VERSION}`;
 const STATIC_CACHE = `shifty-static-${VERSION}`;
 const CURRENT_CACHES = [SHELL_CACHE, STATIC_CACHE];
@@ -37,9 +37,14 @@ const SHELL_ROUTES = [
   "/insights",
   "/companion",
   "/settings",
+  "/settings/sessions",
+  "/settings/appearance",
+  "/settings/pay",
+  "/settings/places",
   "/settings/data",
   "/settings/privacy",
   "/settings/account",
+  "/settings/device",
 ];
 
 const SHELL_ASSETS = [
