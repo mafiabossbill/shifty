@@ -3,67 +3,50 @@ import { Suspense } from "react";
 import { BottomNav, BottomNavFrame } from "@/components/shell/bottom-nav";
 import { PageLoading } from "@/components/shell/page-loading";
 import { Sidebar, SidebarFrame } from "@/components/shell/sidebar";
-import { Topbar, TopbarFrame } from "@/components/shell/topbar";
+import { ActiveRibbonSlot } from "@/components/shell/slots";
+import { TopBar, TopBarFrame } from "@/components/shell/topbar";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import { Toaster } from "@/components/ui/sonner";
-import { requireSession } from "@/lib/current-user";
-import { viewerCapabilities } from "@/lib/permissions";
 
 /**
- * The signed-in shell: sidebar (tablet/desktop), top bar, bottom bar (phones).
- * Anything that reads the session sits behind <Suspense> with a same-size frame
- * as fallback, so the shell prerenders and nothing jumps when data arrives.
+ * The SHIFTY shell. No server session reads: the app works signed out (device mode) and every
+ * screen's data lives on the device, so the whole shell prerenders.
+ *   phones/tablets  top bar (title + sync state) · content · active ribbon · floating bottom bar
+ *   ≥1024px         232px sidebar · slim top bar · active ribbon · content (max 1200px)
+ * Only the parts that read the URL sit behind <Suspense> with same-size frames (dynamic
+ * routes like /sessions/[id] resolve the path at request time).
  */
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <ConfirmProvider>
       {/* dvh: the visible height on phones, whatever the browser's toolbars are doing. */}
-      <div className="flex h-dvh overflow-hidden">
+      <div className="flex h-dvh overflow-hidden bg-background">
+        <a
+          href="#main"
+          className="sr-only z-[60] rounded-control bg-primary px-4 py-2 font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:top-[calc(0.75rem+env(safe-area-inset-top,0px))] focus:left-3"
+        >
+          Skip to content
+        </a>
         <Suspense fallback={<SidebarFrame />}>
-          <SignedInSidebar />
+          <Sidebar />
         </Suspense>
         <div className="flex min-w-0 flex-1 flex-col">
-          <Suspense fallback={<TopbarFrame />}>
-            <SignedInTopbar />
+          <Suspense fallback={<TopBarFrame />}>
+            <TopBar />
           </Suspense>
-          <main className="min-h-0 flex-1 overflow-y-auto">
+          {/* One ribbon, moved by `order`: above the bottom bar on phones, under the top bar from 1024px. */}
+          <div className="order-3 shrink-0 empty:hidden lg:order-1">
+            <ActiveRibbonSlot />
+          </div>
+          <main id="main" tabIndex={-1} className="order-2 min-h-0 flex-1 overflow-y-auto outline-none">
             <Suspense fallback={<PageLoading />}>{children}</Suspense>
           </main>
           <Suspense fallback={<BottomNavFrame />}>
-            <SignedInBottomNav />
+            <BottomNav />
           </Suspense>
         </div>
-        <Toaster position="bottom-right" />
+        <Toaster />
       </div>
     </ConfirmProvider>
-  );
-}
-
-async function SignedInSidebar() {
-  const { user, organization, organizations } = await requireSession();
-  return (
-    <Sidebar
-      organizationName={organization.name}
-      workspaces={organizations}
-      activeWorkspaceId={organization.id}
-      capabilities={viewerCapabilities(user)}
-    />
-  );
-}
-
-async function SignedInTopbar() {
-  const { user } = await requireSession();
-  return <Topbar user={{ name: user.name, role: user.role }} />;
-}
-
-async function SignedInBottomNav() {
-  const { user, organization, organizations } = await requireSession();
-  return (
-    <BottomNav
-      organizationName={organization.name}
-      workspaces={organizations}
-      activeWorkspaceId={organization.id}
-      capabilities={viewerCapabilities(user)}
-    />
   );
 }
