@@ -129,7 +129,7 @@ export function InsightsScreen() {
         <HoursRing model={model} kind={params.range} today={today} live={live} className="md:col-span-12 lg:sticky lg:top-6 lg:col-span-5 lg:row-span-2 lg:self-start" />
         <BarsCard bars={model.bars} today={today} className="md:col-span-12 lg:col-span-7" />
         <RibbonCard ribbon={model.ribbon} clock={settings.clock} today={today} sessionIds={summary.sessionIds} className="md:col-span-12 lg:col-span-7" />
-        <RecordsCard records={model.records} daysWorked={summary.daysWorked} today={today} className="md:col-span-12" />
+        <RecordsCard records={model.records} daysWorked={summary.daysWorked} today={today} range={range} className="md:col-span-12" />
         <MonthCalendar calendar={model.calendar} facts={facts} mode={model.mode} clock={settings.clock} today={today} className="md:col-span-12 lg:col-span-7" />
         <HeatmapCard heat={model.heat} today={today} onDays={(heat) => navigate({ ...params, heat }, { replace: true })} className="md:col-span-12 lg:col-span-5" />
         <ClockInCard clockIn={model.clockIn} clock={settings.clock} className="md:col-span-6" />

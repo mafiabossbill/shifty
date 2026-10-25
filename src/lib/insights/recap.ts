@@ -49,7 +49,7 @@ export function recapSvg(input: RecapInput): string {
   const pad = 96;
   const places = input.places ?? [];
   const chartTop = 640;
-  const chartBottom = places.length ? 1000 : 1110;
+  const chartBottom = places.length ? 930 : 1110;
   const chartH = chartBottom - chartTop;
   const n = Math.max(1, input.bars.length);
   const scale = hourScale(Math.max(input.referenceMs ?? 0, ...input.bars.map((b) => b.netMs + b.breakMs)), 3);
@@ -87,7 +87,7 @@ export function recapSvg(input: RecapInput): string {
     parts.push(`<line x1="${pad}" x2="${W - pad}" y1="${ry}" y2="${ry}" stroke="${c.foreground}" stroke-opacity="0.55" stroke-width="3" stroke-dasharray="12 12"/>`);
   }
   if (places.length) {
-    const top = chartBottom + 120;
+    const top = chartBottom + 112;
     parts.push(`<text x="${pad}" y="${top}" font-family="${FONT}" font-size="28" font-weight="600" letter-spacing="3" fill="${c.muted}">PLACES</text>`);
     places.slice(0, 3).forEach((p, i) => {
       parts.push(

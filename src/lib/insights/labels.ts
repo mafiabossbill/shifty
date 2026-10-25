@@ -57,10 +57,17 @@ export function deltaSentence(deltaMs: number, against: string): string {
   return `${formatDuration(Math.abs(deltaMs))} ${deltaMs > 0 ? "more" : "less"} than ${against}`;
 }
 
-/** Drill-down: one session opens its detail; several open the filtered list. */
-export function sessionsHref(ids: readonly string[]): string | null {
+/** The Sessions list reads at most this many ids from `?ids=`. */
+export const MAX_DRILL_IDS = 500;
+
+/**
+ * Drill-down: one session opens its detail; several open the filtered list. Past MAX_DRILL_IDS the list
+ * is opened by date range instead (when one is given), so nothing is silently cut off.
+ */
+export function sessionsHref(ids: readonly string[], range?: DateRange): string | null {
   if (ids.length === 0) return null;
   if (ids.length === 1) return `/sessions/view?id=${encodeURIComponent(ids[0])}`;
+  if (ids.length > MAX_DRILL_IDS && range) return `/sessions?from=${range.from}&to=${range.to}`;
   return `/sessions?ids=${ids.map(encodeURIComponent).join(",")}`;
 }
 

@@ -115,7 +115,7 @@ export function HoursRing({
           <div className="mt-3 flex min-h-10 items-center">
             {(() => {
               const ids = active ? active.sessionIds : summary.sessionIds;
-              const href = sessionsHref(ids);
+              const href = sessionsHref(ids, active ? undefined : model.range);
               if (!href) return <span className="text-xs text-muted-foreground">{active ? "No time on this day" : null}</span>;
               return (
                 <Button asChild variant="soft" size="sm">

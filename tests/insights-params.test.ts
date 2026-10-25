@@ -70,6 +70,8 @@ describe("insights copy", () => {
     expect(sessionsHref([])).toBeNull();
     expect(sessionsHref(["a"])).toBe("/sessions/view?id=a");
     expect(sessionsHref(["a", "b"])).toBe("/sessions?ids=a,b");
+    const many = Array.from({ length: 501 }, (_, i) => `id${i}`);
+    expect(sessionsHref(many, { from: "2024-01-01", to: "2026-10-28" })).toBe("/sessions?from=2024-01-01&to=2026-10-28");
     expect(clockLabel(18 * 60)).toBe("18:00");
     expect(clockLabel(18 * 60 + 15, "12h")).toBe("6:15pm");
     expect(clockLabel(0, "12h")).toBe("12am");

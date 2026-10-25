@@ -303,5 +303,10 @@ describe("recap card", () => {
     const withPlaces = recapSvg({ ...base, places: [{ label: "Office <A&B>", netMs: 10 * H }] });
     expect(withPlaces).toContain("Office &lt;A&amp;B&gt;");
     expect(withPlaces).not.toMatch(/-6\.79|39\.20/);
+    // The last place row sits above the footer line.
+    const rows = [...withPlaces.matchAll(/<text x="96" y="(\d+(?:\.\d+)?)"[^>]*>([^<]*)</g)].map((m) => [Number(m[1]), m[2]] as const);
+    const placeY = rows.find(([, t]) => t.startsWith("Office"))![0];
+    const footerY = rows.find(([, t]) => t === "Allocated to calendar days")![0];
+    expect(footerY - placeY).toBeGreaterThan(40);
   });
 });

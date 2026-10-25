@@ -13,12 +13,13 @@ import { formatDate, formatDuration, formatMonth } from "@/lib/format";
 import { deltaSentence, plural, sessionHref, sessionsHref, spanLabel } from "@/lib/insights/labels";
 import type { ComparisonModel, InsightsModel, RecordsModel } from "@/lib/insights/model";
 import { formatMinor } from "@/lib/money";
+import type { DateRange } from "@/lib/reports";
 import type { LocalDate } from "@/lib/time/zone";
 import { cn } from "@/lib/utils";
 
 import { ChartCard, DataTable, DrillLink } from "./chart-kit";
 
-export function RecordsCard({ records, daysWorked, today, className }: { records: RecordsModel; daysWorked: number; today: LocalDate; className?: string }) {
+export function RecordsCard({ records, daysWorked, today, range, className }: { records: RecordsModel; daysWorked: number; today: LocalDate; range: DateRange; className?: string }) {
   const y = today.slice(0, 4);
   const elapsed = records.netMs + records.breakMs;
   const tile = (props: React.ComponentProps<typeof StatTile>) => <StatTile variant="raised" {...props} />;
@@ -29,13 +30,13 @@ export function RecordsCard({ records, daysWorked, today, className }: { records
         <CardDescription className="text-xs">For this range. Tap a number to see the shifts behind it.</CardDescription>
       </CardHeader>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:gap-3">
-        {tile({ label: "Sessions", value: String(records.sessions.length), href: sessionsHref(records.sessions) ?? undefined, hint: plural(daysWorked, "day") + " worked" })}
-        {tile({ label: "Net worked", value: formatDuration(records.netMs), href: sessionsHref(records.sessions) ?? undefined })}
+        {tile({ label: "Sessions", value: String(records.sessions.length), href: sessionsHref(records.sessions, range) ?? undefined, hint: plural(daysWorked, "day") + " worked" })}
+        {tile({ label: "Net worked", value: formatDuration(records.netMs), href: sessionsHref(records.sessions, range) ?? undefined })}
         {tile({
           label: "Breaks",
           value: formatDuration(records.breakMs),
           hint: elapsed > 0 ? `${Math.round((records.breakMs / elapsed) * 100)}% of clocked time` : undefined,
-          href: sessionsHref(records.sessions) ?? undefined,
+          href: sessionsHref(records.sessions, range) ?? undefined,
         })}
         {tile({
           label: "Longest session",
