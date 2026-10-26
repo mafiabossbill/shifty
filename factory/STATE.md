@@ -6,7 +6,7 @@
 ## Snapshot
 | Field | Value |
 | --- | --- |
-| Phase | 13 — production live at shifty.heyflexx.com; DB migrated + RLS proven; first-org setup (`db:configure`) pending Bill's approval |
+| Phase | 13 — production live at shifty.heyflexx.com; DB migrated + RLS proven + first org configured; awaiting Bill's first admin sign-in |
 | Blueprint | `factory/blueprint.json` (validated: yes — `validate-blueprints.mjs` PASS) |
 | Production URL | `https://shifty.heyflexx.com` (runs main @ 4c6dc5d) |
 | Preview URL | `https://shifty-git-claude-relaxed-davinci-y8k5u9-zigo-s-projects1.vercel.app` (Vercel READY; not reachable from the build session's network; Vercel Authentication on) |
@@ -32,7 +32,6 @@ Not chosen: integration-engineer (no third-party APIs in phase 1), devops-engine
 ## Blockers
 | Since | Blocker | Needed from | Exactly what is needed |
 | --- | --- | --- | --- |
-| 2026-10-26 | First organization + admin email not stored yet (`ORG_NAME="SHIFTY" npm run db:configure`) → first sign-in won't become admin | Bill | Approve that command in a session (session auto-mode blocks production writes without in-session approval) |
 | 2026-10-25 | Preview can't be fetched from the build session (proxy 403 on *.vercel.app) | — | Verified locally with the same build; Bill opens the preview himself |
 | 2026-10-25 | ~~Vercel Authentication on previews~~ | — | Resolved: custom domain shifty.heyflexx.com |
 
@@ -52,6 +51,7 @@ Not chosen: integration-engineer (no third-party APIs in phase 1), devops-engine
 | 2026-10-26 | Live RLS proof | `npm run db:check-rls` → "Organization isolation and role rules hold (91 checks, incl. SHIFTY)." |
 | 2026-10-26 | Production URL | `scripts/factory/verify-production https://shifty.heyflexx.com` → all checks passed (HTTPS, HSTS, /api/health ok @4c6dc5d, manifest, SW no-cache, public pages, /dashboard → sign-in) |
 | 2026-10-26 | Supabase wired in production | `GET /api/sync/status` → 200 `{"configured":true,"signedIn":false,…}` |
+| 2026-10-26 | First organization | `ORG_NAME="SHIFTY" npm run db:configure` → Organization "SHIFTY" (shifty) is ready; first confirmed sign-in as ADMIN_EMAIL becomes admin |
 | 2026-10-25 | Blueprint valid | `node tools/validate-blueprints.mjs factory/blueprint.json` → PASS |
 | 2026-10-25 | Factory gate | `scripts/check --dir shifty --build --db` → lint, typecheck, unit (400), build, migrations + RLS (91) PASS |
 | 2026-10-25 | Browser journeys (device-mode production build, localhost) | `npx playwright test` → 137 passed, 1 skipped (desktop/375/430; fixtures A, B, DST, G, H, I, J, K, M, export, demo, sweep) |
@@ -61,7 +61,7 @@ Not chosen: integration-engineer (no third-party APIs in phase 1), devops-engine
 
 ## Log
 <!-- newest first -->
-- 2026-10-26 release-engineer — migrations applied to lnusjqtdsrkmzejbpymf, live RLS 91/91 PASS, verify-production PASS; no redeploy needed (prod already on main @ 4c6dc5d, configured:true); db:configure awaiting Bill's approval.
+- 2026-10-26 release-engineer — migrations applied to lnusjqtdsrkmzejbpymf, live RLS 91/91 PASS, verify-production PASS; no redeploy needed (prod already on main @ 4c6dc5d, configured:true); db:configure done (org "SHIFTY").
 - 2026-10-25 orchestrator — QA findings fixed (day-split rounding, multi-tab reload, touch targets, h1, plurals); full gate + 137 e2e green; PR opened.
 - 2026-10-25 orchestrator — all lanes merged; security fixes merged (0105, redirect, device wipe, privacy copy); QA started.
 - 2026-10-25 orchestrator — engine, reducer, store, reports, export, demo; lanes ux/mochi/db/rewards/sync/pwa/home/sessions/insights/companion run in parallel worktrees.
