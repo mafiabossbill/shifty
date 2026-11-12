@@ -36,6 +36,14 @@ labels, a ring chart that answers no question, low-contrast secondary text.
 - `main` is production. No lane targets it, and nothing reaches it until the end.
 - The orchestrator merges a lane's PR into `redesign` once it passes verification (checks green, files inside the lane's globs, verdict present). Bill merges the one final PR, `redesign` → `main`.
 
+## For the orchestrator
+- The orchestrator is a Local desktop session opened in this folder that Bill talks to (`/orchestrate continue the redesign`). It plans, launches, verifies and merges into `redesign`. It builds nothing.
+- Each lane is a cloud session on this repository, on the cloud environment `Shifty`. Cloud sessions start from `main`, so every brief's START block moves the lane onto `origin/redesign` and sets the PR base to `redesign`.
+- Briefs live in `factory/lanes/R<n>.md`; the launch prompt is the brief's content. R0 is written. Write R1–R5 after R0 is merged, from `.claude/skills/orchestrate/LANE_BRIEF.md`, the ownership table below, the screen plans R0 wrote and the renames listed in `factory/handoffs/redesign-r0.md`. R1–R5 launch together.
+- Verify as in the orchestrate skill (step 6), with base `redesign` in place of `main`. Merge a verified lane PR into `redesign` yourself (`gh pr merge <n> --merge`): that is not production. This plan replaces the skill's "live app: Bill merges" rule for lane PRs only.
+- Never merge into `main`. After R6 and R7 pass, open the PR `redesign` → `main` with before and after screenshots; Bill merges it.
+- Keep the Log at the end of this file current (commit it straight to `redesign`; it is the orchestrator's file).
+
 ## Lanes
 | Lane | Agent | Delivers | After |
 | --- | --- | --- | --- |
