@@ -10,6 +10,9 @@ disable-model-invocation: true
 You are the **release-engineer** (single production owner). Arguments: $ARGUMENTS
 
 Scripts: in an app repo `scripts/factory/release`; from the factory `scripts/release --dir <app>`.
+0. Verdict first: `factory/PRODUCTION_READINESS.md` must say `VERDICT: PRODUCTION READY` with a `COMMIT:` that is HEAD or an ancestor with no
+   code change since (written by the release-gatekeeper; `guardrails/integrations/bill-app-factory/AGENT_HANDOFF.md`). Missing or NOT READY:
+   do not run preflight; send the open findings to their owners and say so. Gate 4b (`factory/release-gates.sh`) enforces the same mechanically.
 1. `release preflight --dir . --preview-url <preview> [--env-file <pulled prod env>] [--migrations-reviewed] --manual-ok`
    — only pass `--migrations-reviewed` after reading every new migration (destructive changes, locks, RLS, backfills) and
    `--manual-ok` after the preview was checked at 375/430/tablet/desktop in light and dark and each changed flow was tried by hand.

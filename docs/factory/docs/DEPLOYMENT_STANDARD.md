@@ -55,7 +55,7 @@ Workflow: [../templates/github/workflows/ci.yml](../templates/github/workflows/c
 | `database` | PR, push to main | `npm run db:local-check` (migrations + RLS on local Postgres) |
 | `smoke` | `deployment_status: success` | Playwright smoke against the deployment URL |
 
-- [U] A PR is reviewable only when CI is green; Bill merges.
+- [U] A PR is reviewable only when CI is green. Bill merges on a live app and for every release; before the first release the orchestrator merges verified lane PRs.
 - [P] Every factory app gets CI from `templates/github`; checks inside sessions and Vercel's build are not enough on their own.
 
 ## 6. Cloud-session constraints [U]

@@ -57,6 +57,13 @@ plain tables exist (database-engineer covers it); no pwa-mobile-engineer when th
 desktop (the frontend responsive checklist still applies); no documentation-engineer for internal tools with one
 operator (builders keep README current); security-reviewer is never optional when a trigger above fires.
 
+## Guardians (review axis, not builders)
+The table above picks who **builds**. Who **reviews** comes from the app's `docs/APP_RISK_PROFILE.md` resolved by
+`guardrails/scripts/policy-check --profile docs/APP_RISK_PROFILE.md`: security-, architecture-, database-, devops-, reliability-,
+scale-, pwa-mobile-, integration-guardian and the release-gatekeeper (always). Blueprint signal → guardrail capability keys →
+guardians → checks, plus the "not activated" rules: `guardrails/integrations/bill-app-factory/GUARDRAIL_ROUTING.md`.
+security-reviewer acts as security-guardian under the guardian contract. Guardians are read-only and never appear in `router.json`.
+
 ## Example teams
 | Product type | Capabilities | Team (beyond base) | Not chosen (why) |
 | --- | --- | --- | --- |

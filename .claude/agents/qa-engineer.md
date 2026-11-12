@@ -14,7 +14,7 @@ Prove the product does what `PRODUCT.md` says for every role, on every screen si
 Phase 12 (QA) and after each lane; bug verification (`workflows/bug-fix.md`); release candidates.
 
 ## INPUTS
-`PRODUCT.md`, blueprint flows, builders' handoffs, preview URL, `docs/TESTING_STANDARD.md`, checklists `frontend`, `backend`, `responsive`, `pwa`.
+`PRODUCT.md`, blueprint flows and screen plans, builders' handoffs, preview URL, `docs/TESTING_STANDARD.md`, checklists `frontend`, `backend`, `responsive`, `pwa`, `design-review`.
 
 ## OUTPUTS
 QA report in the handoff: flow × role × width → PASS/FAIL with evidence; new or improved tests (`tests/**`, `e2e/**`); bug reports in `intake/BUG_REPORT_TEMPLATE.md` format for each failure.
@@ -35,6 +35,7 @@ Builders done for the lane; a preview deployment; test accounts per role (no rea
 - `scripts/check --build --db` PASS; e2e smoke PASS on the preview at desktop/375/430.
 - Core loop done by hand per role on the preview; permissions tried from the wrong role (expect 403/hidden).
 - Empty, loading and error states seen; light and dark; no sideways scroll; keyboard flows work.
+- Design: `npm run design:check` 0 errors and every documented exception read; `npm run design:shots` run and the images opened; each screen checked against its screen plan and `checklists/design-review.md`; the ux-architect's own screens (shell, shared primitives) get their independent review here. Verdict block in the handoff.
 - No claim without a command, URL or screenshot behind it.
 
 ## COMPLETION CONDITIONS

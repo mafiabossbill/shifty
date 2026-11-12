@@ -181,7 +181,7 @@ Details: [docs/UI_UX_STANDARD.md](docs/UI_UX_STANDARD.md), checklist [checklists
 - [U] Never desktop-shrunk. Review at **375, 390, 430, tablet (768/1024), desktop (1280+)**, light and dark.
 - [U] Phones: bottom navigation (≤4 tabs + More), dense tables become cards (wide grids may scroll sideways inside their own box), dialogs become bottom sheets, drawers full-width.
 - [U] Touch targets ≥44×44px; inputs ≥16px (no iOS zoom); safe areas on bars, sheets and toasts; no page-level sideways scroll; sticky headers/footers clear the keyboard.
-- [P] Phone type scale one step larger than desktop's dense 13px.
+- [P] Phone type scale one step larger than desktop's (body 16px on phones, 14px on desktop).
 
 ## 14. PWA requirements
 Details: [docs/PWA_STANDARD.md](docs/PWA_STANDARD.md).
@@ -200,7 +200,7 @@ Details: [docs/UI_UX_STANDARD.md](docs/UI_UX_STANDARD.md). Influences (principle
 | Near-white surfaces, subtle borders | `--background` white, `--border` oklch 0.925; sidebar a hair warmer |
 | Restrained accent, color only for meaning | Neutral UI; color for status, danger, success, links in prose |
 | Semantic status pills | Tinted background + dot + label; same tone map everywhere |
-| Compact controls | 32px controls desktop (40px phones); 13px body; `sm`/`xs` in toolbars and rows |
+| Compact controls | 32px controls desktop (40px phones); 14px body; `sm`/`xs` in toolbars and rows |
 | Tables over cards (desktop) | Dense rows, sticky header, column chooser, saved views |
 | Side drawers for detail | Open records in a right sheet; list keeps its place |
 | Inline editing where safe | Fields save in place; destructive edits confirm |
@@ -208,7 +208,11 @@ Details: [docs/UI_UX_STANDARD.md](docs/UI_UX_STANDARD.md). Influences (principle
 | Skeletons, not spinners | Same-size frames while loading |
 | Human errors | Sentence + what to do; failures persist where users can find them |
 | Minimal empty states | One sentence, one action, no illustrations |
-| Type | Geist (or Inter), modest scale (13/15/20), weight not size for hierarchy |
+| Type | Geist (or Inter); seven sizes with one job each (12/14/16/18/22/28, 11 for the phone tab bar); two weights; weight and colour before size |
+| A system, not taste | Sizes, spacing, colours, shadows and corners come from fixed scales in `globals.css`; `npm run design:check` fails anything else |
+| Designed before built | Every screen has a plan: its purpose, one primary action, ranked content, states |
+| Looked at before done | Every screen is in the design gallery (`/design`), photographed at 375 and 1280, light and dark, and reviewed against `checklists/design-review.md` |
+| Nothing that looks generated | No glow, gradient wash, cards in cards, capital-letter labels, decorative charts, faint grey text (UI standard §1) |
 | Information over decoration | Charts only when a trend matters; numbers link to the rows behind them |
 
 ## 16. Preferred shells and table UX
@@ -301,11 +305,12 @@ Details: [docs/SECURITY_STANDARD.md](docs/SECURITY_STANDARD.md).
 - [U] `main` is always deployable. Branches `feature/*`, `fix/*`, `infra/*` (cloud sessions use their assigned `claude/*` branch).
 - [U] Conventional commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`), small and coherent; task → implement → test → commit → handoff.
 - [U] No force-push on shared branches. Never rewrite someone else's history. Merge, don't rebase, shared branches.
-- [U] One PR per session/task with the handoff in the body. **Bill merges.** Agents never merge to `main`.
+- [U] One PR per session/task with the handoff in the body. **Bill merges** the production release and every change to a live app. Lane sessions never merge.
+- [P] While an app isn't live yet, the orchestrator merges lane PRs that pass verification (green checks, files and migrations inside the lane's limits, handoff present), so a build doesn't wait on a button.
 
 ## 25. Claude Code workflow
 Details: [docs/AGENT_SYSTEM.md](docs/AGENT_SYSTEM.md).
-- [U] Work happens in **Claude Code cloud sessions** (claude.ai/code). The orchestrator session plans and starts one session per phase/bucket; each works on its own branch and opens a PR.
+- [U] Work happens in **Claude Code cloud sessions** (claude.ai/code). The orchestrator — a local desktop session Bill talks to, because only that can start sessions — plans and starts one session per lane; each works on its own branch and opens a PR. One session never builds a whole app unless Bill says `solo`.
 - [U] Cloud sessions can't message back: the orchestrator verifies through GitHub (branches, PR bodies, checks) and Vercel (build status, logs), never by assumption.
 - [U] Execute, don't plan back to Bill. Replies are short, plain, honest: what was done, what was verified, what's blocked.
 - [U] Never claim done/deployed/working without the verifying command and its output.

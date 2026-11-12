@@ -1,11 +1,16 @@
 # Frontend checklist
 
-For every UI change. Standard: [../docs/UI_UX_STANDARD.md](../docs/UI_UX_STANDARD.md). Pair with [responsive.md](responsive.md).
+For every UI change. Standard: [../docs/UI_UX_STANDARD.md](../docs/UI_UX_STANDARD.md). Pair with [responsive.md](responsive.md) and [design-review.md](design-review.md).
+
+## Before building
+- [ ] The screen has a plan in the blueprint: purpose, primary action, ranked content, pattern, states
 
 ## System
-- [ ] Colors only from tokens in `src/app/globals.css` (no raw hex in components: `grep -rn "#[0-9a-fA-F]\{6\}" src/components` returns only documented exceptions)
+- [ ] `npm run design:check`: 0 errors; every `design-ok` exception has a reason a reviewer would accept
+- [ ] Sizes from the type scale, two weights, spacing from the scale, three elevations, colours from tokens (the script enforces these; don't fight it, extend the system)
 - [ ] Shared primitives used: `Button`, `useConfirm()`, `StatusPill`, `Skeleton`, `EmptyState`, `Dialog`, `Sheet` from `src/components/ui/` (no one-off copies)
-- [ ] One primary (`default`) button per area; destructive actions use `variant="destructive"` behind `useConfirm()`
+- [ ] Buttons by rank: at most one primary (`default`) per screen, `outline` for the rest, `link` for the least; delete is quiet until `useConfirm()`, whose confirm button is the only red one
+- [ ] Forms use `Field`: label above, hint, error above the control as a sentence; one column; submit stays enabled
 - [ ] Icon-only buttons have `aria-label`
 - [ ] Color carries meaning only (status, danger, success); no gradients, no decorative color
 
@@ -30,5 +35,7 @@ For every UI change. Standard: [../docs/UI_UX_STANDARD.md](../docs/UI_UX_STANDAR
 
 ## Verify
 - [ ] `npm run check` green
+- [ ] Every screen and state is in the gallery (`src/lib/design-gallery.ts`) with sample data that stresses it
+- [ ] `npm run design:shots` run and the images opened; [design-review.md](design-review.md) answered; verdict in the PR
 - [ ] Viewed in light and dark at 375, 430, 768, 1280 ([responsive.md](responsive.md))
 - [ ] Changed flow tried on the preview deployment

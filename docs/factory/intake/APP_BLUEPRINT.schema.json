@@ -849,6 +849,11 @@
           "pattern": "^https://"
         }
       }
+    },
+    "riskProfile": {
+      "type": "string",
+      "pattern": "^docs/[A-Za-z0-9_./-]+\\.md$",
+      "description": "Optional pointer to the guardrail risk profile (bill-app-guardrails templates/APP_RISK_PROFILE.md), e.g. docs/APP_RISK_PROFILE.md. The profile, not the blueprint, lists guardrail capability keys."
     }
   },
   "$defs": {

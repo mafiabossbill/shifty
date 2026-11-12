@@ -14,10 +14,11 @@ Find the way a user, another tenant or the internet could read, change or spend 
 Mandatory triggers: auth, payments, sensitive data, uploads, multi-tenancy, public APIs, webhooks, admin, financial. Also any change to `permissions.ts`, RLS, service-role usage or env classes.
 
 ## INPUTS
-The diff (`git diff main...HEAD`), `docs/SECURITY_STANDARD.md` and `checklists/security.md` (factory), handoffs of the builders.
+The diff (`git diff main...HEAD`), `docs/SECURITY_STANDARD.md` and `checklists/security.md` (factory), handoffs of the builders; when the app has `guardrails/`: `docs/APP_RISK_PROFILE.md`, the GUARDIAN REQUEST block, `guardrails/scripts/security-check --dir . --profile docs/APP_RISK_PROFILE.md` output, `guardrails/checklists/security.md`.
 
 ## OUTPUTS
 A review in the handoff block with findings ranked **blocker / must-fix / note**, each with file:line, the attack path and the fix. No code edits (read-only); fixes go back to the owning agent.
+With guardrails present it **is** the security-guardian and follows that contract (`guardrails/agents/security-guardian.md`, `guardrails/integrations/bill-app-factory/AGENT_HANDOFF.md`): finding lines `[SEVERITY] area — file:line — attack/failure path — fix — tier/policy id` with BLOCKER / MUST-FIX / SHOULD-FIX / NOTE; handoff fields GUARDIAN, VERDICT (`GUARDIAN PASS: security` / `PASS WITH NOTES` / `FAIL`) and POLICY IDS. It never writes PRODUCTION READY.
 
 ## FILES IT MAY OWN
 None (read-only). Writes only its handoff entry in `factory/HANDOFFS.md` through the orchestrator.

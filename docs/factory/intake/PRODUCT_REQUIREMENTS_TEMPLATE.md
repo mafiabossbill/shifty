@@ -5,6 +5,9 @@
 ## One sentence
 <Who uses it, to do what, instead of what.>
 
+## Outcome
+<The one number that should change for users, with its baseline, and the business result it should drive. What must not get worse.>
+
 ## Users and roles
 | Role | Who | Can (capabilities) | Home page | Signs in? |
 | --- | --- | --- | --- | --- |
@@ -23,8 +26,8 @@
 1.
 
 ## Screens
-| Route | Purpose | Roles | Primary action | Phone layout |
-| --- | --- | --- | --- | --- |
+| Route | Purpose (the one thing done here) | Roles | Primary action (≤ 1) | States | Phone layout |
+| --- | --- | --- | --- | --- | --- |
 
 ## Notifications and messages
 | Event | Who | Channel (in-app / push / email / WhatsApp) | When |

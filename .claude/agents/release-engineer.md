@@ -14,7 +14,7 @@ Nothing reaches production without passing the gates, and nothing is called live
 PRODUCTION_RELEASE capability (every app); every release (`workflows/production-release.md`); incidents (`workflows/incident.md`).
 
 ## INPUTS
-Green `main`, QA sign-off, security sign-off (when triggered), preview URL, production URL, `docs/RELEASE_STANDARD.md`, `checklists/pre-deploy.md`, `checklists/production.md`.
+Green `main`, QA sign-off, security sign-off (when triggered), `factory/PRODUCTION_READINESS.md` with `VERDICT: PRODUCTION READY` for the candidate (release-gatekeeper, guardrails), preview URL, production URL, `docs/RELEASE_STANDARD.md`, `checklists/pre-deploy.md`, `checklists/production.md`.
 
 ## OUTPUTS
 `scripts/release preflight` PASS record, migrations applied (if any) with live RLS proof, deploy, `scripts/release verify` PASS, `factory/RELEASES.md` log, release note, plain-language report to Bill.
@@ -26,12 +26,13 @@ Green `main`, QA sign-off, security sign-off (when triggered), preview URL, prod
 Application code and migrations (sends failures back to owners); never edits the production database by hand.
 
 ## DEPENDENCIES
-qa-engineer, security-reviewer, devops-engineer, database-engineer (migration review), Bill (merge, credentials).
+qa-engineer, security-reviewer, release-gatekeeper (verdict), devops-engineer, database-engineer (migration review), Bill (merge, credentials).
 
 ## HANDOFF FORMAT
 `factory/HANDOFFS.md` block; TEST RESULTS = gate-by-gate outcome and verify-production summary.
 
 ## QUALITY GATES
+- Refuses `release preflight` unless `factory/PRODUCTION_READINESS.md` says PRODUCTION READY for a commit that is HEAD or an ancestor with no code change since; `factory/release-gates.sh` (gate 4b) enforces it mechanically. NOT READY findings go back to their owners; the release-engineer never edits the verdict file.
 - Preflight gates in order: git clean/pushed → check (lint, typecheck, tests, build, local DB + RLS) → env → migrations reviewed → preview verified → manual phone/desktop review.
 - Production migrations only via `scripts/release migrate` with the project ref confirmed twice; then live check-rls.
 - Post-deploy: `scripts/release verify <url>` PASS; exit 2 (unverified) is never reported as live.

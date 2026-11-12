@@ -6,7 +6,7 @@ Workflow: [../workflows/production-release.md](../workflows/production-release.m
 ## 1. Ownership [U]
 - One **release owner** per app: the `release-engineer` agent/session (see [../factory/OWNERSHIP.md](../factory/OWNERSHIP.md)). Nobody else applies production migrations or declares a release live.
 - The database engineer prepares and reviews migrations; the release owner applies them through the script.
-- Bill merges PRs. Agents never merge to `main`.
+- Bill merges the release PR and every PR on a live app. Lane sessions never merge. Before the first release, the orchestrator merges lane PRs that pass verification (`.claude/skills/orchestrate/SKILL.md`, decision F14).
 
 ## 2. Release types
 

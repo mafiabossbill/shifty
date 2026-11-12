@@ -12,6 +12,36 @@
 | Core loop | |
 | First release scope | |
 
+## 1b. Outcome and evidence ([docs/PRODUCT_DISCOVERY_STANDARD.md](../docs/PRODUCT_DISCOVERY_STANDARD.md) §4)
+| Field | Value |
+| --- | --- |
+| Product outcome | number · unit · period · baseline (or "learning goal") |
+| Business result it should drive | |
+| Must not get worse | |
+| Buyer / users | who pays · each role: how often, skill, device, where |
+
+| Today (step) | What happens | Where it hurts | Evidence |
+| --- | --- | --- | --- |
+| 1 | | | observed / told / hunch |
+
+| Opportunity (a need, in the user's words) | Evidence | First release, next, or later | Why |
+| --- | --- | --- | --- |
+
+| Value moment | What must be true just before it |
+| --- | --- |
+
+| Alternative considered (only for what makes this product different) | Why it leads or lost |
+| --- | --- |
+
+| Riskiest assumptions | Type | Smallest test Bill can run | Pass mark (a count, fixed now) |
+| --- | --- | --- | --- |
+
+| Measured | People or actions | Where it is recorded |
+| --- | --- | --- |
+
+Harm check: data collected and who else sees it · who is excluded · how it could be abused.
+First impact review: <date set at release>. Parked ideas: <list>.
+
 ## 2. Roles
 | Role | Capabilities | Home | Signs in |
 | --- | --- | --- | --- |
@@ -27,8 +57,10 @@
 | Flow | Steps | Roles | Core |
 | --- | --- | --- | --- |
 
-| Route | Purpose | Roles | Phone layout |
-| --- | --- | --- | --- |
+Screen plans (ux-architect, before feature lanes start; [docs/UI_UX_STANDARD.md](../docs/UI_UX_STANDARD.md) §2.1):
+
+| Route | Purpose (the one thing done here) | Type (overview / focus / make / do) | Roles | Primary action (≤ 1) | Content, ranked 1 · 2 · 3 | Pattern | States | Phone | Next step |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 
 ## 5. Capabilities detected → team
 | Capability | Evidence in brief |

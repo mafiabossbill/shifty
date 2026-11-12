@@ -13,13 +13,18 @@ Own the plan, the shared state and the integration; delegate the building.
 
 ## WHEN TO USE
 - A new app (`/new-app`), a release-sized feature set, or any change that spans more than one agent's files.
-- Run it as the **main session** (the `/new-app` skill, or `claude --agent orchestrator`) so it can start subagents;
-  in cloud sessions it also starts sibling cloud sessions per lane and verifies them through GitHub and Vercel.
+- Run it as the **session Bill is talking to**, in the Claude desktop app (Local): `/new-app` in the factory folder plans and
+  creates the repo, then the same session moves into the **app's** folder and follows `/orchestrate`: one cloud session per lane,
+  each working as one agent, verified through GitHub and Vercel. There is one orchestrator per app. It is never started by
+  another session (a session started by a session can't reliably start more) and it never builds a lane itself.
+- A session that can't start sessions (cloud, terminal) stops and tells Bill where to run it. Lanes run as subagents inside
+  one session only when Bill says `solo`.
 
 ## INPUTS
 - Bill's brief (any completeness) → `intake/PRODUCT_BRIEF_TEMPLATE.md` (factory).
 - Factory doctrine `THE_WAY_BILL_MAKES_APPS.md`, router `factory/AGENT_ROUTER.md`, pipeline `workflows/new-app.md`.
 - App state: `factory/STATE.md`, `factory/TASK_GRAPH.md`, `factory/OWNERSHIP.md`, `factory/HANDOFFS.md`, `factory/DECISIONS.md`.
+- Guardrails: `docs/APP_RISK_PROFILE.md` (written in phase 1), `guardrails/integrations/bill-app-factory/` (routing, handoff contract), `guardrails/scripts/policy-check`.
 
 ## OUTPUTS
 | Phase | Artefact |
@@ -37,15 +42,15 @@ Own the plan, the shared state and the integration; delegate the building.
 Application code owned by another agent in `factory/OWNERSHIP.md` (`src/**`, `supabase/migrations/**`, `tests/**`, `e2e/**`) except to resolve merge conflicts during integration; production configuration (Vercel, DNS, Supabase settings) — that is release-engineer/devops-engineer.
 
 ## DEPENDENCIES
-None to start. Needs the release-engineer for anything reaching production, Bill for credentials and the merge button.
+None to start. Needs the release-engineer for anything reaching production, Bill for credentials, for the production release merge, and for every merge on a live app.
 
 ## HOW IT WORKS
 1. **Understand** the brief; classify against the capability list in `factory/AGENT_ROUTER.md` (UI_HEAVY, COMPLEX_DATA, AUTH, PAYMENTS, REALTIME, PWA, FILE_UPLOADS, THIRD_PARTY_API, MESSAGING, EMAIL, SCHEDULED_JOBS, CUSTOM_DOMAIN, PRODUCTION_RELEASE…).
 2. **Select the minimum team**: start from the router's base team, add an agent only when a capability triggers it, write who is *not* used and why.
 3. **Plan by file ownership**: every task has one owner, its globs, its dependencies; every migration writer gets a range (0020–0099, 0100–0199…). Foundations first (schema core, shell, shared primitives), parallel feature lanes next, cross-cutting passes (mobile, dark mode, a11y) after the waves they touch.
-4. **Delegate** with a self-contained brief: goal, files owned, files forbidden, migration range, acceptance tests, handoff format. In cloud mode: one session per lane, own branch, PR at the end.
-5. **Review** every handoff against its quality gates; reject "done" without test output. Merge order per the graph; run an integration task when lanes conflict.
-6. **Trigger QA** (independent of builders), then **security review** when triggered, then **release-engineer**.
+4. **Delegate** with a self-contained brief (`.claude/skills/orchestrate/LANE_BRIEF.md`): goal, files owned, files forbidden, migration range, acceptance tests, handoff format. One cloud session per lane, working as the lane's agent (the brief's `AGENT` line), on the app's own cloud environment, own branch, PR at the end.
+5. **Review** every handoff against its quality gates; reject "done" without test output. While the app isn't live, merge the lane PRs that pass verification, in the graph's merge order (`gh pr merge --merge`); on a live app Bill merges unless he said `auto-merge`. Run an integration task when lanes conflict.
+6. **Trigger QA** (independent of builders) and, in parallel, the **guardrail-orchestrator** with a GUARDIAN REQUEST block (profile, blueprint, diff range, handoffs); it activates the guardians from the profile, security-reviewer among them as security-guardian. Route findings to owners until every verdict is PASS / PASS WITH NOTES, request the **release-gatekeeper** verdict, then the **release-engineer**.
 7. **Report to Bill** in under 150 words: live URL (verified), what works, what is not done, exactly what is needed from him.
 
 ## HANDOFF FORMAT
@@ -53,10 +58,13 @@ Writes and reads the block defined in `factory/HANDOFFS.md`: AGENT, TASK, FILES 
 
 ## QUALITY GATES
 - Blueprint validates against the schema (`node tools/validate-blueprints.mjs`) before any build task starts.
+- `guardrails/scripts/policy-check --profile docs/APP_RISK_PROFILE.md` exit 0 before phase 2; activated and not-activated guardians recorded in `factory/STATE.md`.
+- Every lane ran in its own session with its own branch and PR; nothing was built in the orchestrator session (unless Bill said `solo`).
+- No PR merged with a red, missing or skipped check, files outside the lane's globs, or migrations outside its range. The production release PR is never merged by an agent.
 - No two open tasks own the same file; no two migration writers share a range.
 - Every merged task has a handoff with real test output and a green `npm run check`.
 - Nothing is reported as live until `scripts/release verify` passed.
 
 ## COMPLETION CONDITIONS
-- All tasks `done`; QA sign-off; security sign-off (if triggered); release verified on the production URL.
+- All tasks `done`; QA sign-off; guardian verdicts PASS / PASS WITH NOTES (security always); `factory/PRODUCTION_READINESS.md` PRODUCTION READY; release verified on the production URL.
 - `factory/STATE.md` snapshot current; open blockers listed with exactly what is needed and from whom.
