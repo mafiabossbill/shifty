@@ -4,7 +4,8 @@
 | --- | --- |
 | AGENT | ux-architect |
 | TASK | Lane R0 of `factory/REDESIGN.md`: install the factory's design system, convert everything shared, mark what is not converted, plan every screen |
-| BRANCH | `lane/r0-foundation` (from `origin/redesign` @ `038070f`) → PR into `redesign` |
+| BRANCH | `lane/r0-foundation` (from `origin/redesign` @ `038070f`) → PR #11 into `redesign`: https://github.com/mafiabossbill/shifty/pull/11 |
+| COMMITS | `7ecf489` (code), `f9d7568` (docs), then this line |
 | DATE | 2026-11-13 |
 | RAN ON | Bill's Mac (main checkout), not the cloud. No `.env`; device mode only. No database work of any kind |
 
