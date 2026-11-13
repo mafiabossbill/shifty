@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R1 (home)
 
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";

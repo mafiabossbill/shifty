@@ -30,7 +30,7 @@ function Tooltip({
             side={side}
             sideOffset={6}
             className={cn(
-              "z-50 max-w-64 rounded-[10px] border border-border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-raised",
+              "z-50 max-w-64 rounded-md border bg-popover px-2 py-1 text-caption text-popover-foreground shadow-overlay",
               "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0",
             )}
           >

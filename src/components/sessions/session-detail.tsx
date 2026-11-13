@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import {
   ArchiveIcon,
@@ -8,7 +9,6 @@ import {
   GlobeIcon,
   PencilIcon,
   RotateCcwIcon,
-  SearchXIcon,
   Trash2Icon,
   TriangleAlertIcon,
 } from "lucide-react";
@@ -57,11 +57,10 @@ export function SessionDetailScreen() {
         <BackLink />
         <h1 className="sr-only">Session not found</h1>
         <EmptyState
-          icon={<SearchXIcon />}
           title="This session isn't on this device."
           description="It may have been deleted for good, or it was recorded on another device that hasn't synced yet."
           action={
-            <Button asChild variant="secondary">
+            <Button asChild variant="outline">
               <Link href="/sessions">Back to sessions</Link>
             </Button>
           }
@@ -172,18 +171,18 @@ function SessionDetail({ session, view }: { session: ShiftSession; view: StoreVi
           </div>
           {trashed ? (
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" size="sm" onClick={() => act(() => store.restore(session.id), "Restored")}>
+              <Button variant="outline" size="sm" onClick={() => act(() => store.restore(session.id), "Restored")}>
                 <RotateCcwIcon />
                 Restore
               </Button>
-              <Button variant="danger" size="sm" onClick={purge}>
+              <Button variant="destructive" size="sm" onClick={purge}>
                 <Trash2Icon />
                 Delete forever
               </Button>
             </div>
           ) : (
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
                 <PencilIcon />
                 Edit times
               </Button>
@@ -224,7 +223,7 @@ function SessionDetail({ session, view }: { session: ShiftSession; view: StoreVi
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start">
         <div className="grid gap-5">
-          <Card variant="hero" className="gap-5">
+          <Card className="gap-5 overflow-hidden">
             <div className="flex items-start justify-between gap-4">
               <div className="grid min-w-0 gap-1">
                 <p className="type-eyebrow text-muted-foreground">Net worked</p>
@@ -237,7 +236,6 @@ function SessionDetail({ session, view }: { session: ShiftSession; view: StoreVi
                 value={goal.ratio}
                 overage={goal.goalMs ? goal.overageMs / goal.goalMs : 0}
                 size={92}
-                glow={false}
                 label={`Net worked: ${spokenDuration(row.metrics.netMs)} of a ${spokenDuration(goal.goalMs)} goal`}
                 className="shrink-0"
               >

@@ -1,16 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Outfit } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { APP_CONFIG } from "@/lib/app-config";
-import { DEFAULT_ACCENT, THEME_COLORS, THEME_INIT_SCRIPT } from "@/lib/theme";
+import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-/** Display face: headings, big numbers and the live timer (with `tabular`). */
-const outfit = Outfit({ variable: "--font-outfit", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
   title: { default: APP_CONFIG.name, template: `%s · ${APP_CONFIG.name}` },
@@ -24,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // The theme script swaps these for the chosen theme's color before first paint.
+  // The theme script swaps these for the chosen theme's colour before first paint.
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
     { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
@@ -40,12 +38,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang={APP_CONFIG.locale}
-      data-accent={DEFAULT_ACCENT}
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full`}
-    >
+    <html lang={APP_CONFIG.locale} suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

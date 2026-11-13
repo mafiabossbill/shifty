@@ -5,13 +5,15 @@ import { cn } from "@/lib/utils";
 /** Date and time fields with nothing picked; browsers (Safari) draw a sample value in them. */
 const PICKER_TYPES = new Set(["date", "time", "datetime-local", "month", "week"]);
 
-/** Shared field look: Input, Textarea and Select. 44px on phones (16px text, no iOS zoom), 40px from tablets. */
+/**
+ * Shared field look: Input, Textarea and Select. 32px tall, 40px on phones (16px text there, so iOS
+ * never zooms). The edge is `border-control`: a field's border carries meaning, so it holds 3:1.
+ * Focus is the global ring (globals.css); an invalid field turns its edge red and says why above it (Field).
+ */
 export const fieldClass = cn(
-  "w-full min-w-0 rounded-control border border-input bg-raised px-3.5 text-sm text-foreground transition-[border-color,box-shadow,background-color] outline-none",
-  "placeholder:text-muted-foreground/80 hover:border-border-strong",
-  "focus-visible:border-brand focus-visible:bg-card focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:outline-none",
-  "disabled:cursor-not-allowed disabled:opacity-50",
-  "aria-invalid:border-danger aria-invalid:ring-danger/15",
+  "w-full min-w-0 rounded-md border border-control bg-transparent px-3 text-body text-foreground shadow-raised transition-colors dark:bg-input/30",
+  "placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
+  "aria-invalid:border-destructive",
 );
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
@@ -21,7 +23,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
     <input
       type={type}
       data-slot="input"
-      className={cn(fieldClass, "flex h-11 py-2 md:h-10", emptyPicker && "text-muted-foreground focus:text-foreground", className)}
+      className={cn(fieldClass, "flex h-8 py-1 max-md:h-10", emptyPicker && "text-muted-foreground focus:text-foreground", className)}
       {...props}
     />
   );

@@ -1,3 +1,4 @@
+// design-ok-file: Mochi's drawing keeps its own colours and shapes (R-D4); the screens around it follow the system
 /**
  * Mochi's part lists and palettes as plain data. The renderers (mochi.tsx, habitat.tsx) key their drawing
  * maps by these unions, so TypeScript fails if a part has no drawing; tests/mochi-catalog.test.ts fails if a

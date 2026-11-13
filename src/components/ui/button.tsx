@@ -5,56 +5,47 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 /*
- * One button system. Every action is a real <Button>, never link-styled text.
- *   primary    the one main action of an area (Clock in, Save). `default` is an alias.
- *   secondary  supporting action with weight (Add break, Edit).
- *   soft       accent-tinted, a friendly second action (Retry location, Add note).
- *   ghost      low emphasis, dense or icon-only (Close, More).
- *   outline    toolbar controls (Filter, Export).
- *   danger     Delete / Discard / Empty trash; always behind useConfirm(). `destructive` is an alias.
- *   link       navigation inside prose only.
- * Sizes: sm (toolbars, rows) · md (forms, dialogs; default) · lg (sheet footers, phone CTAs)
- *        xl (THE big round CLOCK IN / CLOCK OUT) · icon-sm · icon · icon-lg (icon-only: needs aria-label).
- * Phones get 44px+ controls; on any touch screen the hit area is at least 44px (globals.css, via data-touch-target).
+ * Buttons are styled by rank, not by meaning (design standard §8). Every action is a real <Button>.
+ *   default      primary: solid. The one action this screen or dialog exists for. At most one per screen.
+ *   outline      secondary: same shape, an edge instead of a fill. Everything else worth a button.
+ *   link         tertiary: underlined text. Low-stakes actions (Cancel, Clear filters).
+ *   ghost        no edge at rest: icon-only buttons and actions inside a row, menu or toolbar.
+ *   destructive  red fill, and only as the confirm button inside useConfirm(). Before that step a
+ *                delete is an ordinary outline or link button, labelled with what it deletes.
+ * There is no grey-filled and no tinted button: one reads as disabled, the other as decoration.
+ * Labels are a verb and a noun ("Clock in", "Save session"). A button is disabled only while its
+ * own request runs, or with the reason written beside it.
+ * Sizes: default for forms and dialogs · sm for toolbars · xs for in-row actions · lg for the one
+ * main action of a phone screen (44px tall there) · icon-* for icon-only buttons (need an aria-label).
+ * On any touch screen the hit area is at least 44px whatever the size (globals.css).
  */
 const buttonVariants = cva(
-  [
-    "relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-control font-medium select-none",
-    "transition-[background-color,color,box-shadow,transform,filter] duration-150 ease-out motion-safe:active:scale-[0.98]",
-    "focus-ring disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",
-    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-  ].join(" "),
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-md text-body font-semibold whitespace-nowrap transition-colors select-none disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
   {
     variants: {
       variant: {
-        primary: "bg-primary text-primary-foreground shadow-primary hover:brightness-110 active:brightness-95",
-        secondary: "border border-border bg-raised text-foreground hover:bg-accent active:bg-accent",
-        soft: "bg-brand-soft text-brand-strong hover:bg-brand-soft/70 active:bg-brand-soft/60",
-        ghost: "text-foreground hover:bg-accent active:bg-accent",
-        outline: "border border-border-strong bg-transparent text-foreground hover:bg-accent active:bg-accent",
-        danger: "bg-destructive-strong text-danger-foreground hover:brightness-110 active:brightness-95",
-        link: "h-auto px-0 text-brand underline-offset-4 hover:underline",
-        // Template aliases.
-        default: "bg-primary text-primary-foreground shadow-primary hover:brightness-110 active:brightness-95",
-        destructive: "bg-destructive-strong text-danger-foreground hover:brightness-110 active:brightness-95",
+        default: "bg-primary text-primary-foreground shadow-raised hover:bg-primary/90 active:bg-primary/80",
+        destructive: "bg-destructive-strong text-white shadow-raised hover:bg-destructive-strong/90 active:bg-destructive-strong/80",
+        outline: "border border-control bg-background shadow-raised hover:bg-accent hover:text-accent-foreground active:bg-accent dark:bg-input/30 dark:hover:bg-accent",
+        ghost: "font-normal hover:bg-accent hover:text-accent-foreground active:bg-accent",
+        link: "text-foreground underline decoration-control underline-offset-4 hover:decoration-foreground",
       },
+      // Phones get a step up; on any touch screen the hit area is at least 44px (globals.css).
       size: {
-        sm: "h-10 px-3.5 text-sm md:h-9 md:px-3 md:text-[13px]",
-        md: "h-11 px-5 text-sm md:h-10 md:px-4",
-        lg: "h-13 px-6 text-base font-semibold md:h-12",
-        xl: "h-18 min-w-56 rounded-full px-10 font-display text-lg font-semibold tracking-wide md:h-16 [&_svg:not([class*='size-'])]:size-5",
-        "icon-sm": "size-10 md:size-9",
-        icon: "size-11 md:size-10",
-        "icon-lg": "size-13 rounded-full md:size-12 [&_svg:not([class*='size-'])]:size-5",
-        // Template aliases.
-        default: "h-11 px-5 text-sm md:h-10 md:px-4",
-        xs: "h-8 gap-1 rounded-lg px-2.5 text-xs md:h-7 md:px-2 [&_svg:not([class*='size-'])]:size-3.5",
-        "icon-xs": "size-8 rounded-lg md:size-7 [&_svg:not([class*='size-'])]:size-3.5",
+        default: "h-8 px-3 max-md:h-10 max-md:px-4",
+        xs: "h-6 gap-1 px-2 text-caption max-md:h-8 max-md:px-3 [&_svg:not([class*='size-'])]:size-3",
+        sm: "h-7 px-3 text-caption max-md:h-9 max-md:px-3",
+        lg: "h-9 px-4 max-md:h-11",
+        icon: "size-8 max-md:size-10",
+        "icon-sm": "size-7 max-md:size-9",
+        "icon-xs": "size-6 max-md:size-8 [&_svg:not([class*='size-'])]:size-3",
       },
     },
+    // A link is text: no side padding, so it lines up with the text above it. Its height still follows the size.
+    compoundVariants: [{ variant: "link", className: "px-0 max-md:px-0" }],
     defaultVariants: {
-      variant: "primary",
-      size: "md",
+      variant: "default",
+      size: "default",
     },
   },
 );

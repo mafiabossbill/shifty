@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R1 (home)
 
 import { useEffect, useId, useRef, useState } from "react";
 import { ChevronDownIcon, PlayIcon } from "lucide-react";
@@ -59,7 +60,7 @@ export function ClockInHero({ goalSeconds, zone, localHour, projects, prompt, fi
   const eyebrow = prompt ? "Clock in now?" : firstRun ? "One tap starts your first shift" : "Ready when you are";
 
   return (
-    <Card variant="hero" padding="lg" className="items-center gap-6 text-center lg:min-h-[560px] lg:justify-center">
+    <Card padding="lg" className="items-center gap-6 overflow-hidden text-center lg:min-h-[560px] lg:justify-center">
       <HeroGlow />
       {mochi}
       <div className="relative grid gap-1">
@@ -81,7 +82,7 @@ export function ClockInHero({ goalSeconds, zone, localHour, projects, prompt, fi
         <div className="relative grid size-60 place-items-center sm:size-64">
           <Button
             ref={buttonRef}
-            size="xl"
+            size="lg"
             disabled={busy}
             onClick={submit}
             className="size-44 min-w-0 flex-col gap-1.5 px-0 text-xl tracking-[0.12em] uppercase md:size-48"

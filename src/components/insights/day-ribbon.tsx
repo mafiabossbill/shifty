@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /**
  * B. Day-split ribbon. Each session is ONE connected band on an hours-from-local-midnight axis (of the

@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import Link from "next/link";
 import { ChevronRightIcon } from "lucide-react";

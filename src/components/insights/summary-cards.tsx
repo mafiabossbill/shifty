@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /** H. Records · I. Month on month · J. Places · K. Earnings. Every number links to its sessions. */
 import * as React from "react";
@@ -22,7 +23,7 @@ import { ChartCard, DataTable, DrillLink } from "./chart-kit";
 export function RecordsCard({ records, daysWorked, today, range, className }: { records: RecordsModel; daysWorked: number; today: LocalDate; range: DateRange; className?: string }) {
   const y = today.slice(0, 4);
   const elapsed = records.netMs + records.breakMs;
-  const tile = (props: React.ComponentProps<typeof StatTile>) => <StatTile variant="raised" {...props} />;
+  const tile = (props: React.ComponentProps<typeof StatTile>) => <StatTile {...props} />;
   return (
     <Card className={cn("min-w-0", className)} role="region" aria-labelledby="insights-records">
       <CardHeader>
@@ -153,10 +154,9 @@ export function PlacesCard({ places, className }: { places: InsightsModel["place
         <EmptyState
           variant="inline"
           className="py-6"
-          icon={<MapPinOffIcon />}
           title="Location wasn't captured for these shifts."
           action={
-            <Button asChild variant="secondary" size="sm">
+            <Button asChild variant="outline" size="sm">
               <Link href="/settings/privacy">Location settings</Link>
             </Button>
           }
@@ -195,7 +195,7 @@ export function EarningsCard({ earnings, sessionIds, className }: { earnings: In
       className={className}
       empty={earnings.rows.length === 0 ? "No paid time in this range." : null}
       emptyAction={
-        <Button asChild variant="secondary" size="sm">
+        <Button asChild variant="outline" size="sm">
           <Link href="/settings">Pay settings</Link>
         </Button>
       }

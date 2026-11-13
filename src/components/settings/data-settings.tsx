@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import * as React from "react";
 import { FileJsonIcon, FileSpreadsheetIcon, UploadIcon } from "lucide-react";
@@ -110,15 +111,15 @@ export function DataSettings() {
       <SettingsGroup title="Export" description="Times are in UTC with each session's reporting timezone, plus per-day allocations and edit history." id="export">
         <SwitchRow id="redact" title="Leave out precise location" description="Coordinates and accuracy are removed. Place names stay." checked={redact} onCheckedChange={setRedact} />
         <div className="grid gap-2 py-4 sm:grid-cols-3">
-          <Button variant="secondary" onClick={() => exportAs("backup")}>
+          <Button variant="outline" onClick={() => exportAs("backup")}>
             <FileJsonIcon />
             JSON backup
           </Button>
-          <Button variant="secondary" onClick={() => exportAs("sessions")}>
+          <Button variant="outline" onClick={() => exportAs("sessions")}>
             <FileSpreadsheetIcon />
             Sessions CSV
           </Button>
-          <Button variant="secondary" onClick={() => exportAs("allocations")}>
+          <Button variant="outline" onClick={() => exportAs("allocations")}>
             <FileSpreadsheetIcon />
             Day allocations CSV
           </Button>
@@ -139,7 +140,7 @@ export function DataSettings() {
               if (f) void readFile(f);
             }}
           />
-          <Button asChild variant="secondary" className="w-fit">
+          <Button asChild variant="outline" className="w-fit">
             <label htmlFor="import-file" className="cursor-pointer">
               <UploadIcon />
               Choose a backup file

@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R4 (companion)
 import { LockIcon } from "lucide-react";
 
 import { nextUnlocks } from "@/components/mochi/catalog";

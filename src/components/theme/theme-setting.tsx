@@ -1,17 +1,15 @@
 "use client";
 
-import { CheckIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
-import { RadioGroup } from "radix-ui";
+import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 
 import { useTheme } from "@/components/theme/theme-provider";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { SwitchRow } from "@/components/ui/switch";
-import { ACCENTS, ACCENT_SWATCHES, type Theme } from "@/lib/theme";
-import { cn } from "@/lib/utils";
+import { ACCENTS, ACCENT_LABELS, type Accent, type Theme } from "@/lib/theme";
 
 /*
- * Appearance controls. Each applies at once (no Save button for a preference). The settings lane
- * mounts these and also persists the choice to user_settings (theme, accent) for other devices.
+ * Appearance controls. Each applies at once (no Save button for a preference). The settings screen
+ * mounts these and also saves the choice with the person's settings for other devices.
  */
 
 const THEME_OPTIONS = [
@@ -35,44 +33,25 @@ export function ThemeSetting({ onChange }: { onChange?: (theme: Theme) => void }
   );
 }
 
-export function AccentSetting({ onChange }: { onChange?: (accent: (typeof ACCENTS)[number]) => void }) {
-  const { accent, setAccent, resolvedTheme } = useTheme();
+const ACCENT_OPTIONS = ACCENTS.map((value) => ({ value, label: ACCENT_LABELS[value] }));
+
+/**
+ * Retired by R-D5: the interface has one action colour, so this choice no longer changes anything
+ * on screen. It still stores the value, so the Appearance screen keeps working until its lane (R5)
+ * takes the row out. Do not add it to a new screen.
+ */
+export function AccentSetting({ onChange }: { onChange?: (accent: Accent) => void }) {
+  const { accent, setAccent } = useTheme();
   return (
-    <RadioGroup.Root
-      aria-label="Accent color"
+    <SegmentedControl
+      ariaLabel="Accent"
       value={accent}
+      options={ACCENT_OPTIONS}
       onValueChange={(next) => {
-        const value = next as (typeof ACCENTS)[number];
-        setAccent(value);
-        onChange?.(value);
+        setAccent(next);
+        onChange?.(next);
       }}
-      orientation="horizontal"
-      loop
-      className="flex flex-wrap gap-3"
-    >
-      {ACCENTS.map((value) => {
-        const swatch = ACCENT_SWATCHES[value];
-        return (
-          <RadioGroup.Item
-            key={value}
-            value={value}
-            data-touch-target
-            className="group grid cursor-pointer justify-items-center gap-1.5 rounded-xl p-1 text-xs text-muted-foreground focus-ring data-[state=checked]:text-foreground"
-          >
-            <span
-              className={cn(
-                "flex size-10 items-center justify-center rounded-full ring-2 ring-transparent ring-offset-2 ring-offset-card transition-shadow",
-                "group-data-[state=checked]:ring-foreground/70",
-              )}
-              style={{ backgroundColor: swatch[resolvedTheme] }}
-            >
-              <CheckIcon className="size-4 text-white opacity-0 dark:text-[#0c0a18] group-data-[state=checked]:opacity-100" strokeWidth={2.5} aria-hidden />
-            </span>
-            {swatch.label}
-          </RadioGroup.Item>
-        );
-      })}
-    </RadioGroup.Root>
+    />
   );
 }
 

@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R4 (companion)
 import { Habitat } from "@/components/mochi/habitat";
 import { Mochi } from "@/components/mochi/mochi";
 import type { CatalogItem } from "@/components/mochi/catalog";

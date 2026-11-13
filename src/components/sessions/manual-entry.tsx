@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import { KeyboardIcon } from "lucide-react";
 import Link from "next/link";
@@ -157,7 +158,7 @@ function ManualEntryForm() {
           <p className="mr-auto inline-flex items-center gap-2 text-xs text-muted-foreground">
             <KeyboardIcon className="size-4" aria-hidden /> Saved as Manual, with no location.
           </p>
-          <Button asChild variant="secondary" size="lg">
+          <Button asChild variant="outline" size="lg">
             <Link href="/sessions">Cancel</Link>
           </Button>
           {verdict?.status === "overlap" ? (

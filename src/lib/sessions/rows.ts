@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R2 (sessions)
 /**
  * One view model per session for the Sessions screens: metrics, day allocations, the display title, the
  * clock-in place and the project. Pure. Completed sessions are immutable objects (the reducer replaces a

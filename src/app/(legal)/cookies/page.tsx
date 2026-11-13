@@ -27,26 +27,20 @@ export default function CookiesPage() {
         {APP_CONFIG.name} uses only the cookies and browser storage it needs to work. There are no advertising or tracking
         cookies and nothing is shared with advertisers, so we don&apos;t ask for cookie consent.
       </p>
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Purpose</th>
-            <th>Kept for</th>
-          </tr>
-        </thead>
-        <tbody>
-          {STORAGE.map((s) => (
-            <tr key={s.name}>
-              <td className="font-mono text-[12px]">{s.name}</td>
-              <td>{s.kind}</td>
-              <td>{s.purpose}</td>
-              <td>{s.duration}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* A list, not a table: four columns do not fit a phone, and each row reads as one sentence. */}
+      <dl className="mb-4 border-b text-body">
+        {STORAGE.map((s) => (
+          <div key={s.name} className="grid gap-1 border-t py-3">
+            <dt className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-mono font-semibold">{s.name}</span>
+              <span className="text-caption text-muted-foreground">
+                {s.kind} · kept {s.duration.charAt(0).toLowerCase() + s.duration.slice(1)}
+              </span>
+            </dt>
+            <dd>{s.purpose}</dd>
+          </div>
+        ))}
+      </dl>
       <p>
         Blocking these in your browser will sign you out or reset your settings. If we ever add optional cookies we will ask
         first and update this page.

@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -101,7 +102,7 @@ function RezoneForm({ session, suggested, onDone }: { session: ShiftSession; sug
         ) : null}
       </SheetBody>
       <SheetFooter>
-        <Button variant="secondary" size="lg" onClick={onDone}>
+        <Button variant="outline" size="lg" onClick={onDone}>
           Cancel
         </Button>
         <Button size="lg" disabled={same || saving} onClick={save}>

@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R1 (home)
 
 import Link from "next/link";
 import { useMemo } from "react";

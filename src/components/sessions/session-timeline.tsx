@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R2 (sessions)
 import { LogInIcon, LogOutIcon, MapPinIcon, MapPinOffIcon, TimerIcon } from "lucide-react";
 
 import { formatDate, formatDuration, formatTime, type ClockFormat } from "@/lib/format";

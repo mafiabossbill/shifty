@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R1 (home)
 
 import { useEffect, useId, useState } from "react";
 import { SparklesIcon, Undo2Icon } from "lucide-react";
@@ -185,7 +186,7 @@ function RecapBody({
       <SheetFooter>
         {undoLeft > 0 ? (
           <Button
-            variant="secondary"
+            variant="outline"
             size="lg"
             onClick={async () => {
               const undone = await onUndo();

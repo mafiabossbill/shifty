@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R2 (sessions)
 import { ArchiveIcon, MapPinIcon, PencilLineIcon, KeyboardIcon } from "lucide-react";
 
 import { Pill, SessionStatusPill, SyncStatePill } from "@/components/ui/status-pill";
@@ -19,9 +20,9 @@ export function ProjectDot({ color, className }: { color: keyof typeof PROJECT_C
 
 /** Sync badge only when it tells something: on an account, "Local" means not sent yet. */
 export function syncBadge(state: SessionSyncState | undefined, mode: SyncMode) {
-  if (state === "syncing") return <SyncStatePill state="syncing" size="sm" />;
-  if (state === "attention") return <SyncStatePill state="needs_attention" size="sm" />;
-  if (state === "local" && mode !== "device" && mode !== "unconfigured") return <SyncStatePill state="local" label="Local" size="sm" />;
+  if (state === "syncing") return <SyncStatePill state="syncing" />;
+  if (state === "attention") return <SyncStatePill state="needs_attention" />;
+  if (state === "local" && mode !== "device" && mode !== "unconfigured") return <SyncStatePill state="local" label="Local" />;
   return null;
 }
 
@@ -43,19 +44,19 @@ export function SessionBadges({
   const status = sessionStatus(s);
   return (
     <div className={cn("flex min-w-0 flex-wrap items-center gap-1.5", className)}>
-      {status !== "completed" ? <SessionStatusPill status={status} size="sm" /> : null}
+      {status !== "completed" ? <SessionStatusPill status={status} /> : null}
       {s.origin === "manual" ? (
-        <Pill size="sm" icon={<KeyboardIcon />}>
+        <Pill icon={<KeyboardIcon />}>
           Manual
         </Pill>
       ) : null}
       {s.revisions.length > 0 ? (
-        <Pill size="sm" tone="info" icon={<PencilLineIcon />}>
+        <Pill tone="info" icon={<PencilLineIcon />}>
           Corrected
         </Pill>
       ) : null}
       {s.archivedAt !== null ? (
-        <Pill size="sm" icon={<ArchiveIcon />}>
+        <Pill icon={<ArchiveIcon />}>
           Archived
         </Pill>
       ) : null}

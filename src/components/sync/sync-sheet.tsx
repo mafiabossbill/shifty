@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R1 (home)
 
 import Link from "next/link";
 import { useState } from "react";
@@ -94,7 +95,7 @@ function SyncSheetBody({ onClose }: { onClose: () => void }) {
               Nothing has been mixed or overwritten. Open Account settings to sign in as the owner, or to clear this device and start fresh as{" "}
               {sync.email ?? "the current account"}.
             </p>
-            <Button asChild variant="secondary" className="justify-self-start">
+            <Button asChild variant="outline" className="justify-self-start">
               <Link href="/settings/account" onClick={onClose}>
                 Open Account settings
               </Link>
@@ -103,14 +104,14 @@ function SyncSheetBody({ onClose }: { onClose: () => void }) {
         ) : null}
 
         {sync.mode === "signed_out" ? (
-          <Button asChild variant="secondary" className="justify-self-start">
+          <Button asChild variant="outline" className="justify-self-start">
             <Link href="/login" onClick={onClose}>
               Sign in
             </Link>
           </Button>
         ) : null}
         {sync.mode === "device" ? (
-          <Button asChild variant="secondary" className="justify-self-start">
+          <Button asChild variant="outline" className="justify-self-start">
             <Link href="/settings/account" onClick={onClose}>
               Account and sync
             </Link>
@@ -143,7 +144,7 @@ function SyncSheetBody({ onClose }: { onClose: () => void }) {
                     </dl>
                   </details>
                   <div className="flex flex-wrap gap-2">
-                    <Button variant="secondary" size="sm" disabled={busy !== null} onClick={() => void act(`retry:${item.id}`, () => store.retry(item.id), "Couldn't retry. Try again.")}>
+                    <Button variant="outline" size="sm" disabled={busy !== null} onClick={() => void act(`retry:${item.id}`, () => store.retry(item.id), "Couldn't retry. Try again.")}>
                       <RotateCwIcon aria-hidden /> Retry
                     </Button>
                     <Button

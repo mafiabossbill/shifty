@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R4 (companion)
 import { ChevronDownIcon } from "lucide-react";
 
 /** The short, honest version of the rewards rules. */

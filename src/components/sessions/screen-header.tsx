@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R2 (sessions)
 import { ChevronLeftIcon } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";

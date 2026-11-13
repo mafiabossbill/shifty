@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import Link from "next/link";
 import { FlaskConicalIcon } from "lucide-react";
@@ -18,7 +19,7 @@ export function DemoLink({ compact = false }: { compact?: boolean }) {
     return (
       <div className="grid gap-2">
         {!compact ? <p className="text-sm text-muted-foreground">You&apos;re looking at demo data. Nothing here is saved.</p> : null}
-        <Button variant={compact ? "outline" : "secondary"} size="sm" className="w-fit" onClick={() => exitDemo()}>
+        <Button variant="outline" size="sm" className="w-fit" onClick={() => exitDemo()}>
           <FlaskConicalIcon />
           Exit demo
         </Button>
@@ -28,7 +29,7 @@ export function DemoLink({ compact = false }: { compact?: boolean }) {
   return (
     <div className="grid gap-2">
       {!compact ? <p className="text-sm text-muted-foreground">Ten weeks of made-up shifts to look around with. Kept in memory only — your own data isn&apos;t touched.</p> : null}
-      <Button asChild variant={compact ? "outline" : "secondary"} size="sm" className="w-fit">
+      <Button asChild variant="outline" size="sm" className="w-fit">
         <Link href="/?demo=1">
           <FlaskConicalIcon />
           Try demo data

@@ -2,22 +2,12 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const TONE_STROKE = {
-  brand: "stroke-brand",
-  success: "stroke-success",
-  celebrate: "stroke-celebrate",
-  info: "stroke-info",
-} as const;
-
 export interface ProgressRingProps {
-  /** Progress toward the goal, 0..1. Values above 1 are drawn as a full ring (the goal is a goal, not a limit). */
+  /** Progress toward the goal, 0..1. Values above 1 are drawn as a full ring. */
   value: number;
-  /**
-   * Time beyond the goal as a fraction of the goal (e.g. 4h over a 16h goal = 0.25), drawn as a separate,
-   * thinner inner arc in the celebrate color. Capped at 1 for drawing. Omit or 0 for none.
-   */
+  /** Time beyond the goal as a fraction of the goal, drawn as a thinner inner arc. Capped at 1 for drawing. */
   overage?: number;
-  /** Accessible name, e.g. "Net worked: 12h 30m of 16h goal". Required: the ring is not decoration. */
+  /** Accessible name, e.g. "Net worked: 12h 30m of 16h goal". */
   label: string;
   /** Read out instead of the percentage, e.g. "78 percent, 3h 30m to go". */
   valueText?: string;
@@ -25,12 +15,7 @@ export interface ProgressRingProps {
   size?: number;
   /** Stroke width in px. Default ~7.5% of the size. */
   thickness?: number;
-  tone?: keyof typeof TONE_STROKE;
-  /** Soft glow on the arc in dark mode. Default on. */
-  glow?: boolean;
-  /** One radial glow behind the ring (the hero). Default off. */
-  halo?: boolean;
-  /** Center content: the big number, a label. */
+  /** Centre content. */
   children?: React.ReactNode;
   className?: string;
 }
@@ -66,27 +51,15 @@ export function ringGeometry({ value, overage = 0, size, thickness }: { value: n
 }
 
 /**
- * The goal ring (Home hero, Insights "hours in motion", session recap). Pure SVG, no client JS:
- * render it from absolute timestamps each tick and the arc follows (eased unless motion is reduced).
+ * RETIRED. The design standard (§13) has no rings or gauges: goal progress is a `ProgressBar`
+ * (progress-bar.tsx) with the figures in words. This file stays only so the two screens that still
+ * draw a ring compile until their lanes replace it (Home: R1, session detail: R2); then it is deleted.
+ * tests/design.test.ts fails any converted file that imports it. Do not use it in new work.
  */
-export function ProgressRing({
-  value,
-  overage = 0,
-  label,
-  valueText,
-  size = 232,
-  thickness,
-  tone = "brand",
-  glow = true,
-  halo = false,
-  children,
-  className,
-}: ProgressRingProps) {
+export function ProgressRing({ value, overage = 0, label, valueText, size = 232, thickness, children, className }: ProgressRingProps) {
   const g = ringGeometry({ value, overage, size, thickness });
   const { progress: v, over: o, stroke, center, radius, circumference, innerStroke, innerRadius, innerCircumference } = g;
-
-  const arcClass = "fill-none [stroke-linecap:round] motion-safe:transition-[stroke-dashoffset] motion-safe:duration-700 motion-safe:ease-out";
-
+  const arcClass = "fill-none [stroke-linecap:round] motion-safe:transition-[stroke-dashoffset] motion-safe:duration-300 motion-safe:ease-out";
   return (
     <div
       role="progressbar"
@@ -98,39 +71,21 @@ export function ProgressRing({
       className={cn("relative inline-grid shrink-0 place-items-center", className)}
       style={{ width: size, maxWidth: "100%", aspectRatio: "1" }}
     >
-      {halo ? (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -inset-[18%] rounded-full opacity-90 dark:opacity-100"
-          style={{ background: "radial-gradient(closest-side, var(--glow), transparent 72%)" }}
-        />
-      ) : null}
       <svg viewBox={`0 0 ${size} ${size}`} className="absolute inset-0 size-full -rotate-90 overflow-visible" aria-hidden>
-        <circle cx={center} cy={center} r={radius} className="fill-none stroke-track" strokeWidth={stroke} />
+        <circle cx={center} cy={center} r={radius} className="fill-none stroke-neutral-200" strokeWidth={stroke} />
         {v > 0 ? (
+          <circle cx={center} cy={center} r={radius} strokeWidth={stroke} strokeDasharray={circumference} strokeDashoffset={g.offset} className={cn(arcClass, "stroke-neutral-800")} />
+        ) : null}
+        {o > 0 ? (
           <circle
             cx={center}
             cy={center}
-            r={radius}
-            strokeWidth={stroke}
-            strokeDasharray={circumference}
-            strokeDashoffset={g.offset}
-            className={cn(arcClass, TONE_STROKE[tone], glow && "dark:drop-shadow-[0_0_8px_var(--glow)]")}
+            r={innerRadius}
+            strokeWidth={innerStroke}
+            strokeDasharray={innerCircumference}
+            strokeDashoffset={g.innerOffset}
+            className={cn(arcClass, "stroke-neutral-500")}
           />
-        ) : null}
-        {o > 0 ? (
-          <>
-            <circle cx={center} cy={center} r={innerRadius} className="fill-none stroke-celebrate/15" strokeWidth={innerStroke} />
-            <circle
-              cx={center}
-              cy={center}
-              r={innerRadius}
-              strokeWidth={innerStroke}
-              strokeDasharray={innerCircumference}
-              strokeDashoffset={g.innerOffset}
-              className={cn(arcClass, "stroke-celebrate", glow && "dark:drop-shadow-[0_0_6px_rgb(255_174_90/0.35)]")}
-            />
-          </>
         ) : null}
       </svg>
       {children ? <div className="relative z-10 grid place-items-center text-center">{children}</div> : null}

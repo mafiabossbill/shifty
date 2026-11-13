@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import { RotateCcwIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
@@ -103,10 +104,9 @@ export function TrashScreen() {
       />
       {rows.length === 0 ? (
         <EmptyState
-          icon={<Trash2Icon />}
           title="The trash is empty."
           action={
-            <Button asChild variant="secondary">
+            <Button asChild variant="outline">
               <Link href="/sessions">Back to sessions</Link>
             </Button>
           }
@@ -131,7 +131,7 @@ export function TrashScreen() {
                     <span className="text-xs text-muted-foreground">{deletedAgo(s.deletedAt ?? now, now, settings.reportingTimeZone)}</span>
                   </Link>
                   <div className="flex gap-2">
-                    <Button variant="secondary" size="sm" className="max-sm:flex-1" disabled={busy !== null} onClick={() => run(s.id, () => store.restore(s.id), "Restored")}>
+                    <Button variant="outline" size="sm" className="max-sm:flex-1" disabled={busy !== null} onClick={() => run(s.id, () => store.restore(s.id), "Restored")}>
                       <RotateCcwIcon />
                       Restore
                     </Button>

@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import * as React from "react";
 import { toast } from "sonner";

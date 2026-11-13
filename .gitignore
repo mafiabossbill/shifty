@@ -31,3 +31,6 @@ npm-debug.log*
 
 # Local review screenshots
 screenshots/
+
+# screenshots from `npm run design:shots` (looked at, never committed)
+/factory/screens/

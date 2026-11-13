@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R4 (companion)
 import Link from "next/link";
 import { AwardIcon, GiftIcon, SparkleIcon } from "lucide-react";
 

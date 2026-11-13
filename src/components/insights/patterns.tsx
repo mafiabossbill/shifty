@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /**
  * F. Clock-in time of day (24-bar strip with the typical start marked) and

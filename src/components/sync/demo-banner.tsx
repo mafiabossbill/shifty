@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R1 (home)
 
 import { FlaskConicalIcon } from "lucide-react";
 

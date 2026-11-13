@@ -1,3 +1,4 @@
+// design-ok-file: Mochi's drawing keeps its own colours and shapes (R-D4); the screens around it follow the system
 import { useId, type CSSProperties, type ReactNode } from "react";
 
 import { OUTDOOR_BACKGROUNDS, WALL_DECOR, type BackgroundKey, type DecorKey } from "./parts";
