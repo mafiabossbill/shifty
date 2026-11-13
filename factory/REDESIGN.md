@@ -96,4 +96,5 @@ screen plan lists (active session, on a break, sync problem, long titles). `npm 
 
 ## Log
 <!-- newest first: YYYY-MM-DD lane — one line -->
+- 2026-11-13 R0 — foundation built on `lane/r0-foundation` (run on Bill's Mac, device mode): system, shell, shared pages, gallery, 67 markers (R1 9 · R2 18 · R3 12 · R4 11 · R5 17), screen plans, D11 to D21; open question for Bill: D13 (the accent row). Handoff: `factory/handoffs/redesign-r0.md`.
 - 2026-11-12 orchestrator — branch created; factory docs, agents, skills and the design reference refreshed to factory f784c3b; plan written.

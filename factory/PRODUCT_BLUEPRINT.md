@@ -70,26 +70,179 @@ Account deletion (`delete_own_account()`) removes every row below for that user.
 | F08 Trash | Delete session → trash (30 days, A09) → restore, or empty trash (hard delete + tombstone, rewards recompute) | admin, member | no |
 | F09 Device mode → account | Use signed out ("On this device") → sign up / sign in → offered to upload this device's sessions (replay of the log; nothing uploads without a tap) → Synced · sign out warns with the count of unsynced changes, then clears device data | admin, member | no |
 
-Device mode = signed out or Supabase not configured: the screens marked `public` below render from IndexedDB only; no server data is ever public.
+### Screens
+Screen plans (UI standard §2.1), written by lane R0 of the redesign (`factory/REDESIGN.md`, 2026-11-13) from what each screen does today.
+The redesign is look only (R-D1): every block, action, URL and piece of copy listed here exists today and stays; a plan settles what
+ranks first and what it is built from. Each lane builds its screens from its plans and shows every listed state in the gallery.
 
-| Route | Purpose | Roles | Phone layout |
+Device mode = signed out or Supabase not configured: every screen below renders from IndexedDB only; no server data is ever public.
+
+| Route | Lane | Type | Primary action (the one solid button) |
 | --- | --- | --- | --- |
-| `/` | Home: greeting + Mochi, Clock in / active hero, goal ring, last session, week sparkline | admin, member, public (device mode) | dashboard |
-| `/sessions` | History timeline cards, filters, search, Needs attention filter | admin, member, public (device mode) | cards |
-| `/sessions/[id]` | Unified timeline, per-day split, breaks, fixes, revisions, edit with reason, conflict resolution | admin, member, public (device mode) | detail |
-| `/sessions/new` | Manual entry with overlap check | admin, member, public (device mode) | form |
-| `/sessions/trash` | Trash: restore or empty | admin, member, public (device mode) | cards |
-| `/insights` | Range tabs, allocation toggle, ring, day-split ribbon, heatmap, weekly bars, month calendar, distributions, records, deltas, places, earnings | admin, member, public (device mode) | dashboard |
-| `/companion` | Mochi habitat, level, XP log, achievements, wardrobe | admin, member, public (device mode) | cards |
-| `/settings` | Goal, timezone, 12/24 h, week start, theme, accent, reminders, safety limit, pay tracking, haptics, sync status | admin, member, public (device mode) | form |
-| `/settings/privacy` | Location on/off, retention, see/delete fixes, saved places | admin, member, public (device mode) | form |
-| `/settings/data` | Export CSV/JSON, printable report, import dry run, upload device data | admin, member, public (device mode) | form |
-| `/settings/account` | Profile, password, download my data, delete account | admin, member | form |
-| `/settings/team` | Template team page: invite, role, deactivate | admin | cards |
-| `/login`, `/signup` | Auth shell | public | public |
-| `/privacy`, `/terms`, `/data-deletion` | Legal (with `/cookies`) | public | public |
+| `/` | R1 | Do | Clock in · Clock out while working · End break while on a break |
+| `/sessions` | R2 | Overview | Add missed session |
+| `/sessions/view?id=` | R2 | Focus | None at rest (Edit times is an outline) · Restore when the session is in the trash |
+| `/sessions/new` | R2 | Make | Add session |
+| `/sessions/trash` | R2 | Overview | None |
+| `/insights` (and `?session=`) | R3 | Overview | None |
+| `/companion` | R4 | Overview | None (a tap on an item wears it at once) |
+| `/settings` | R5 | Overview | None |
+| `/settings/sessions`, `/appearance`, `/pay`, `/privacy` | R5 | Make (preferences) | None (each control saves on change) |
+| `/settings/places` | R5 | Make | Save place, inside the new-place form |
+| `/settings/device` | R5 | Focus | Install SHIFTY, only when the browser offers it |
+| `/settings/data` | R5 | Do | Add N sessions, inside the import preview |
+| `/settings/account` | R5 | Do | Sign in when signed out · Upload this device's data when it is waiting |
+| `/dashboard` | R1 | — | A redirect to `/`; it draws nothing |
+| `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/onboarding`, `/no-access`, legal pages | R0 | Focus / reading | Built in lane R0; shown at `/design/auth/*`, `/login`, `/privacy`, `/cookies`, `/no-access` |
 
-Phone nav: Home · Sessions · Insights · Companion · Settings (central Clock action on Home).
+#### Rules every plan shares
+| Topic | Rule |
+| --- | --- |
+| Title | The top bar names the place on every width. `PageHeader` keeps the `<h1>` for screen readers and shows only a description and actions. A sub-page (a settings page, Add session, Trash) shows a back link and its own title in `text-title` |
+| Numbers | The largest number on any screen is `text-display` (28px), `font-semibold tabular-nums`. The live timer too. No bigger size exists |
+| Labels | A label above a figure is `text-caption text-muted-foreground`, sentence case. No capital-letter labels, no wide letter spacing |
+| Boxes | One `Card` around a distinct object (a session, the habitat). A list is rows divided by lines inside one region. Figures (`StatTile`) have no box. Never a box in a box |
+| Colour | Greys. Status only through the tone map (`Pill`): Clocked in and Syncing `info`, On break and Needs attention `warning`, Completed and Synced `success`, a problem `danger`. More hours is never good or bad: hours and overage stay grey. Violet only in the logo and in Mochi's drawing |
+| Charts | Bars and bands in greys (one darker step for today or the selected mark), the goal as a dashed line, exact values on hover or tap, a legend beside, a table alternative, an empty sentence. No ring, no radial chart, no glow. `ProgressBar` for progress toward a goal, with the figures in words beside it |
+| Actions | One solid button a screen at most. Delete, discard, erase and sign-out are outline or link buttons until the confirm step, where the red button names the thing ("Delete session") |
+| Fields | `Field`: label above, hint and error between label and control. Preferences save on change; text fields save on blur or Enter and say "Saved" |
+| States | Loading is a skeleton of the real layout. Empty is `EmptyState`: what will appear and the first action. An action's error is a sentence next to where it happened or a toast with the sentence the store returns |
+| Motion | Under 300ms, only on what changes. Nothing pulses: a live session is told by its pill and its running clock |
+| Mochi | The drawing keeps its colours (R-D4). Everything around it (name, speech, level, tiles) follows the system |
+
+#### `/` Home (R1)
+| Field | Plan |
+| --- | --- |
+| Purpose | Start or end a shift with one tap, and see net time against the goal right now |
+| Who arrives | The worker at the start, during and at the end of a shift: from the home-screen icon, the ribbon on another page, or a `?action=clock-in` shortcut. They know whether they are working |
+| Type | Do |
+| Primary action | Idle: **Clock in**. Working: **Clock out** (8s undo, no confirm). On a break: **End break**, and Clock out drops to outline. The other action (Start a break) is outline. `lg` size, full width on phones |
+| Content 1 | Idle: the Clock in button with "Goal 16h net · {zone}" under it. Working: the state pill and "Started {time}", net worked as the one `text-display` number with seconds, a `ProgressBar` to the goal and the words "of 16h goal · 6h 48m to go" or "Goal 16h · +1h 12m past it" |
+| Content 2 | Working: total elapsed, breaks, "Goal at {time}", the crossed-midnight split, the location line with Try again, rest nudges. Idle: Add details (title, project, tags, note), the last session (one linked row), this week (net, days worked, breaks, seven small bars) |
+| Content 3 | The greeting with a small Mochi and her line; the rhythm summary linking to Companion; "Try the demo" on first run |
+| Pattern | Home [P]: what is happening now, then figures that link to their rows. No hero box: the session block sits on the page; Last session is one interactive `Card`; This week is `StatTile`s and bars with no box |
+| States | Loading · first run (no sessions: one column, one sentence, the demo link) · idle · `?action=clock-in` prompt with "Not now" · working · on a break · over the goal · crossed midnight · location pending, captured, not captured, none after 90s · nudge shown · storage blocked · long title · demo banner · recap sheet with and without undo left |
+| Phone | One column: state, number, bar, actions within thumb reach, then details. From 1024px two columns: the session on the left, last session, week and rhythm on the right |
+| Next step | Clock in: the screen turns to the working state. Clock out: the recap sheet (net, per-day split, breaks, XP as a list, optional mood, energy and note; **Done** or **Save and close** solid, Undo clock-out outline), then Home idle with the last session |
+| Must change | The ring, its halo and the round CLOCK IN go: a flat solid button and a bar. The 64 to 88px timer becomes `text-display`. Capital eyebrows become captions. The hero card and the side cards lose their boxes and glow. Nudges are a sentence with a dismiss button, not tinted cards. The XP box in the recap becomes a plain list |
+
+Shell parts owned by R1: the **sync pill** opens the sync sheet (state pill, explanation, last synced, **Sync now** solid, Needs attention rows with Retry outline and Discard link → confirm); the **active ribbon** is one flat line ("Working · 9:12:04 net") linking to Home, no pulsing dot; the **demo banner** is one quiet line with Exit demo as a link.
+
+#### `/sessions` Sessions (R2)
+| Field | Plan |
+| --- | --- |
+| Purpose | Find a shift and open it |
+| Who arrives | The worker checking or fixing a past shift: from the nav, Home's last session, or a number tapped in Insights (`?ids=`, `?date=`) |
+| Type | Overview |
+| Primary action | **Add missed session**. Trash (n) is a ghost link beside it |
+| Content 1 | The rows, grouped by date: title (semibold), net (right-aligned, tabular), "18:00 → 10:00 +1" |
+| Content 2 | Search, sort, Filters (count), the count line "56 sessions · 672h 40m net"; per row: breaks, the day-split bar, state and origin pills, place |
+| Content 3 | Drill-down chip from Insights, active filter chips, "Show n more" |
+| Pattern | Table on desktop (`table-fixed`: Session gives way, Time, Day split, Breaks and Net never wrap), stacked rows on phones, in one region divided by lines. Filters in a sheet, applied at once, kept in the URL. The project is its name in muted text, not a coloured dot |
+| States | Loading · storage error · no sessions (EmptyState + Add a missed session) · no matches (Clear search and filters) · from Insights · a running session · archived · manual, corrected, syncing, needs attention · longest and shortest title · over 60 rows |
+| Phone | Stacked rows: title and net, range and breaks, bar, pills. Sort full width. Filters as a bottom sheet |
+| Next step | A row opens `/sessions/view?id=`; Add missed session opens `/sessions/new` |
+| Must change | Rows are lines in one list, not cards. The day-split bar uses two greys with breaks as gaps. Pills follow the tone map at one size. No brand-coloured net for a running session: the pill says it |
+
+#### `/sessions/view?id=` Session (R2)
+| Field | Plan |
+| --- | --- |
+| Purpose | Check one shift: its times, its net, how it counts on each day. Correct it when it is wrong |
+| Who arrives | From a row in Sessions, Home's last session, a link in Insights, Privacy or the XP log. They know which shift they opened |
+| Type | Focus |
+| Primary action | None at rest: **Edit times** is an outline next to the title, and the solid button lives in its sheet (Save correction). In the trash: **Restore** is solid, Delete forever is outline → red confirm |
+| Content 1 | Title, "{date} · {range} {zone}", net worked as `text-display` with the goal in words and a `ProgressBar` |
+| Content 2 | The timeline (work and breaks across midnight), what it adds to each day (rows linking to `/sessions?date=`), elapsed, breaks, days |
+| Content 3 | Details edited in place (title, project, tags, notes, mood, energy), location points, history of corrections, the "…" menu (Change reporting timezone, Archive, Move to trash) |
+| Pattern | A page, two columns from 1024px. Sections under small titles, divided by lines; no card per section. The timeline is bars on a time axis: dark for work, light for a break, a labelled tick at each midnight, legend beside |
+| States | Loading · not on this device · running (live clock, no end) · in the trash (notice, fields disabled) · archived · device clock ahead or behind, timezone changed (amber notice: icon and sentence) · changed since opened · no breaks · no location asked · with corrections · long title wraps |
+| Phone | One column: summary, timeline as a vertical rail, days, details, location, history |
+| Next step | Edit times → toast, stays. Move to trash → toast with Undo, back to Sessions. Delete forever → Trash. Both sheets: Cancel outline, primary last; an overlap asks once more before saving |
+| Must change | The 92px ring becomes a bar and words. Six cards become sections. Mood and energy are segmented controls with words. Warning notices are an icon and a sentence on an amber tint, not tinted cards with borders |
+
+Sheets: **Edit times** (Start, End, breaks, a preview of net and the per-day split, "Why are you changing it?" required; Save correction solid, "Save anyway (overlap)" → confirm) and **Reporting timezone** (picker, a before and after table per day; Use this timezone solid).
+
+#### `/sessions/new` Add session (R2)
+| Field | Plan |
+| --- | --- |
+| Purpose | Record a shift that was not clocked |
+| Who arrives | From Add missed session on the list or its empty state. They know roughly when they worked |
+| Type | Make |
+| Primary action | **Add session** (becomes "Save anyway (overlap)" → confirm). Cancel is a link |
+| Content 1 | Start and end, in the chosen timezone |
+| Content 2 | Breaks; the preview (net, range, per-day split) and the verdict when times overlap another session |
+| Content 3 | Title, project, tags, notes, each marked (optional); "Saved as Manual, with no location." |
+| Pattern | One column, 24 to 32rem, required first. Start and End share a row from 640px. The button is disabled only with the verdict written above it |
+| States | Loading · defaults · end before start · longer than a day · overlap · still in the future · save failed (sentence above the button) |
+| Phone | One column; the buttons stack, Add session on top |
+| Next step | Toast "Session added", then the new session's page |
+| Must change | Two cards become one form with a divider before the optional part; errors move above their fields |
+
+#### `/sessions/trash` Trash (R2)
+| Field | Plan |
+| --- | --- |
+| Purpose | Bring a deleted shift back, or remove it for good |
+| Who arrives | From Trash (n) on the list, or after Move to trash. They know what they deleted |
+| Type | Overview |
+| Primary action | None. Per row: Restore (outline) and Delete forever (link) → red confirm. Empty trash is an outline → red confirm |
+| Content 1 | Rows: title, "{date} · {range}", net |
+| Content 2 | "Deleted 3 days ago"; the row's two actions |
+| Content 3 | The sentence that trashed sessions do not count; Empty trash |
+| Pattern | One divided list, narrow column |
+| States | Loading · empty ("The trash is empty." + Back to sessions) · one · many · an action running (that row's buttons disabled) |
+| Phone | Rows stack; the two actions sit under the text |
+| Next step | Restore → toast, the row leaves. Emptied → the empty state |
+| Must change | Red buttons at rest become quiet; rows lose their cards |
+
+#### `/insights` Insights (R3)
+| Field | Plan |
+| --- | --- |
+| Purpose | See how much was worked in a period and how it falls on each day |
+| Who arrives | The worker at the end of a week or month: from the nav or Home's week. They want totals first, patterns second |
+| Type | Overview |
+| Primary action | None: the screen is for reading. Share week / Share recap and Mark this week reviewed are outlines; reviewed shows a `success` pill |
+| Content 1 | The range (Today, Week, Month, Year, Custom; previous and next; its label) and the answer: net worked for the range as `text-display`, with Breaks, Days worked and Avg per day as figures, then **Net per day** (or week, or month) as bars against the goal |
+| Content 2 | The mode (Allocate to calendar days · Group by session start date) with its example sentence; Records (eight figures linking to their sessions); the day-split ribbon; the month calendar |
+| Content 3 | Activity (7, 30, 90 days), Clock-in time, Session length, Month on month, Places, Earnings (pay tracking on) |
+| Pattern | Sections under small titles in one column on phones, two from 1024px, divided by space and lines: no card per chart. Each chart: title, one line, a headline figure, the chart, legend, Table / Chart switch, an empty sentence. Range, date, mode, heat span and `session` stay in the URL |
+| States | Loading · storage error (Reload) · no sessions at all (EmptyState + Clock in) · nothing in this range ("Go to your latest shift") · a running session in range · the two modes differ (the note) · a chart failed (Try again) · `?session=` view (back link, four figures, the ribbon, a per-day table, Open session; not on this device; in the trash) · pay off, no places |
+| Phone | One column, range control full width, short labels ("Calendar days", "Review week"); tables scroll inside their own box |
+| Next step | Any figure or bar opens the sessions behind it (`/sessions?ids=`, `?date=`, or one session). Share opens a dialog: the image, Include place names, Download solid, Share outline |
+| Must change | **Hours in motion goes**: the concentric rings and radial spokes answer what the bars already answer. Its total, breaks, days worked and average become the figures above the bars; its Live pill becomes "Clocked in". Calendar and heatmap tints are steps of grey with the hours written in the cell. The pulsing circle on a running band goes. The recap image is redrawn in the light theme (white, near-black, greys): it is an exported picture, so its literal colours are a documented exception |
+
+#### `/companion` Companion (R4)
+| Field | Plan |
+| --- | --- |
+| Purpose | See Mochi and what healthy logging has unlocked; change what she wears and her room |
+| Who arrives | From the nav, Home's rhythm line, or after a new achievement. They are here for fun, not for work |
+| Type | Overview |
+| Primary action | None. A tap on an unlocked item wears it at once; Rename is a ghost icon button with a label |
+| Content 1 | Mochi in her habitat (the drawing, in its own colours), her name and what she says; the level with XP as a `ProgressBar` and "340 / 500 XP · 160 XP to level 8" |
+| Content 2 | Wardrobe · Room · Achievements · XP log (a segmented control; `?tab=`). Item tiles: the drawing, the name, and its state in words (Wearing, Level 9, Earn Night Owl). Rhythm: Now, Best, Freezes as figures and today's line |
+| Content 3 | Coming up (the next three unlocks), How XP works (a disclosure), the new-achievement notice |
+| Pattern | The habitat is the one picture and its own box. Level and rhythm are figures with no box. Items are a grid of tiles (each a distinct object: one border); the worn item is marked twice (a darker border and "Wearing" with a check). Locked tiles are not buttons: muted, a lock icon and the words. Achievements and the XP log are divided lists |
+| States | Loading · storage error · new achievement (one or several) · every level unlocked · room full (toast) · an outdoor background (the wall-decor note) · no XP yet (EmptyState + Go to Home) · rename: empty, too long · the longest name (24) |
+| Phone | One column: Mochi, level, rhythm, the tabs, tiles two across. From 1024px Mochi on the left, level and rhythm on the right; tiles four or five across |
+| Next step | Wearing an item updates Mochi above at once. An earned achievement links to its session |
+| Must change | Level and name pills over the picture become text under it. Orange "celebrate" tints, tinted XP chips and glow go: XP is "+20 XP" in plain tabular text. The celebration is a quiet notice (Mochi small, the achievement's name, Dismiss); nothing bounces outside the drawing itself. `src/components/mochi/gallery.tsx` (an unused pose sheet with its own colours) becomes gallery pages or is deleted |
+
+#### `/settings` and its pages (R5)
+Structure stays: from 1024px a side list (Tracking: Your sessions, Pay, Places · You: Appearance, Privacy, Your data, Account · Device: This device) beside the page; below it `/settings` is the menu and every page has "‹ Settings". Preferences save on change (`updateSettings`); a failed save says so in a toast.
+People arrive from the nav or from a link that names the page (Insights → Location settings, the sync sheet → Account); they know which setting they came for. Phones: one column, each row's label above its control, 44px targets. Next step: a change is saved in place and confirmed there; "‹ Settings" leads back to the menu. Type and the one solid button of each page are in the table at the top of this section.
+
+| Screen | Purpose | Content 1 · 2 · 3 | States | Must change |
+| --- | --- | --- | --- | --- |
+| `/settings` (menu, phones) | Find the setting to change | 1 the eight rows, each a label and its current value ("16h goal · Dar es Salaam") · 2 group names · 3 Try demo data (outline) | Loading (values as skeletons) · demo on (Exit demo) | Group names are captions in sentence case. Rows are lines in one list per group, icons quiet and small, no tinted icon circles, no card per row |
+| `/settings/sessions` | Say how new sessions start and how days are counted | 1 Default goal (hours and minutes), Reporting timezone (opens the picker sheet) · 2 Week starts on, Clock, Planned workdays, Rest reminders (Remind me at, Break nudge, Notifications) · 3 Safety limit (switch, then Limit) | Loading · goal invalid (four sentences) · notifications blocked, unsupported, iPhone not installed (switch disabled with the reason beside it) · limit on | Workday and reminder chips are toggle buttons whose pressed state is marked twice (surface and a check). Hints sit between label and control. Errors above the field |
+| `/settings/appearance` | Choose light or dark, and how the app feels | 1 Theme (Light, Dark, System) · 2 Reduce motion, Haptics · 3 Your name | Loading | **The Accent colour row is removed** (D13: one action colour, so it changes nothing). The saved value is left as it is. Needs Bill's nod before R5 starts |
+| `/settings/pay` | Turn pay estimates on and set the rate | 1 Track pay · 2 Currency, Default hourly rate with "TZS / hour" · 3 the note that amounts are never converted | Off (only the switch) · on with no rate · invalid amount | The rate field is short (it holds a number), unit beside it |
+| `/settings/places` | Name the places worked at | 1 Remembered places: name, radius, Forget · 2 Use my current location (outline) and the new-place form (Name, Radius; **Save place** solid, Cancel link) · 3 From your sessions (Save as place, outline `xs`) | Loading · no places (inline EmptyState) · locating · location refused (the sentence from `LOCATION_STATUS_COPY`) · form open · name missing | Forget is a ghost icon button with a tooltip, red only in its confirm. Rows are lines, not cards |
+| `/settings/device` | Install SHIFTY and see what this browser can do | 1 Install: **Install SHIFTY** solid when the browser offers it, otherwise the steps for this device · 2 What this device supports: a table of feature, detail, Yes / Partly / No (icon and word) · 3 the lock-screen note, demo | Installed (the guide is hidden) · prompt available · iOS · Android · other · notifications not asked (Allow notifications, outline) | Yes / Partly / No are pills by tone (`success`, `warning`, `neutral`), never colour alone. Steps are a numbered list, not three boxes |
+| `/settings/privacy` | Decide when location is asked and how long points are kept | 1 At clock-in, At clock-out (switches) · 2 Keep location points (30 days, 90 days, 1 year, Keep), Every location point (rows: date and title linking to the session, moment, accuracy, place; delete) · 3 Show coordinates (link), Delete all (outline → red confirm), What SHIFTY doesn't do | Loading · no points (EmptyState, inline) · over 50 (Show more) · shortening the period with older points (confirm) | Delete all is quiet at rest. The four "doesn't do" lines are a plain list |
+| `/settings/data` | Take a copy of everything, or bring a backup in | 1 Export: Leave out precise location, then JSON backup, Sessions CSV, Day allocations CSV (three equal outlines) · 2 Import: Choose a backup file (outline) → the preview: four figures, what will not be added, **Add N sessions** solid, Cancel link · 3 Printable report: Month, Print or save as PDF (outline), the preview | Loading · export failed · file unreadable · nothing to add · conflicts · adding · empty month | The preview's four counters are `StatTile`s with no boxes. The report preview is always light (it is paper). Its print rules stay |
+| `/settings/account` | Know where the data lives; sign in, sync, sign out, erase | 1 On this device (where the data is, how many sessions, how many waiting) and Sync (the state sentence) · 2 the state's action: **Sign in** solid and Create account outline when signed out · **Upload this device's data** solid when it is waiting · Sync now and Sign out outlines when signed in · 3 Your account data (Download my data link, Delete my account), Erase this device | Loading · demo · sync not set up · not signed in · signed in · upload waiting · another account's data · signed out with changes waiting | Delete my account, Erase this device and Sign out are outlines at rest; red appears only in their dialogs, which keep typing the email or ERASE. One solid button at most on the page |
+
+Phone nav: Home · Sessions · Insights · Companion · Settings (five tabs, D18).
 
 ## 5. Capabilities detected → team
 | Capability | Evidence in brief |

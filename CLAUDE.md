@@ -17,9 +17,13 @@ Product truth: `PRODUCT.md`. Shared build state: `factory/` (STATE, TASK_GRAPH, 
 - Every new env var goes in `.env.example` with a class tag; `tests/config.test.ts` enforces it.
 - Money: integer minor units + currency; format and parse only with `src/lib/money.ts`.
 - Personal data: new fields go in the privacy policy, new entities in the export (`src/lib/data/account.ts`), new providers in `LEGAL.processors` (`src/lib/legal.ts`). References to `profiles` are `on delete set null`.
-- UI: tokens in `globals.css`, shared primitives in `src/components/ui/`, destructive actions through `useConfirm()`, tables on desktop and cards on phones, 44px touch targets, 16px inputs on phones.
+- UI: the standard is `docs/factory/docs/UI_UX_STANDARD.md`; the system is visible at `/design` in development. A screen is planned (purpose, one primary action, ranked content, states: `factory/PRODUCT_BLUEPRINT.md` § Screens) before it is built.
+- UI values come only from the system: seven type sizes (`text-caption` … `text-display`), two weights, the spacing scale, three shadows (`shadow-raised`, `-overlay`, `-modal`), token colours. `npm run design:check` runs inside `npm test` and fails anything else; a real exception is `// design-ok: <reason>`.
+- Every signed-in screen has a gallery page per state with sample data (`src/app/design/screens/<area>/`, registered in `src/lib/design-gallery/<area>.ts`, rendered with `GalleryScreen`; `tests/design.test.ts` enforces it). Before calling a screen done: `npm run design:shots`, open the images, review against `docs/factory/checklists/design-review.md`.
+- UI patterns: shared primitives in `src/components/ui/` (`Field` for every form field), buttons by rank (one solid button a screen, red only in the confirm step), destructive actions through `useConfirm()`, tables on desktop and cards on phones, 44px touch targets, 16px inputs on phones.
+- One action colour, near-black (`--primary`). Violet lives in the logo mark and in Mochi's drawing only; the files that draw Mochi are the one standing exception to the colour rules.
 - Done = `npm run check:full` green + handoff written (`factory/HANDOFFS.md`). The Stop hook blocks finishing while `npm run check` fails.
 
 ## Commands
-`npm run dev` · `npm run check` (lint+typecheck+test) · `npm run check:full` (+build) · `npm run test:e2e` (needs E2E_BASE_URL) ·
+`npm run dev` · `npm run check` (lint+typecheck+test) · `npm run check:full` (+build) · `npm run design:check` · `npm run design:shots` · `npm run test:e2e` (needs E2E_BASE_URL) ·
 `npm run db:migrate [-- --status]` · `npm run db:local-check` (local Postgres + RLS) · `npm run db:check-rls` (live) · `npm run db:configure` · `npm run pwa:icons '#hex'`
