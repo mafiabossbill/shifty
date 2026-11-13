@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import * as React from "react";
 import { PrinterIcon } from "lucide-react";
@@ -60,7 +61,7 @@ export function PrintableReport() {
             ))}
           </Select>
         </div>
-        <Button variant="secondary" onClick={() => window.print()}>
+        <Button variant="outline" onClick={() => window.print()}>
           <PrinterIcon />
           Print or save as PDF
         </Button>

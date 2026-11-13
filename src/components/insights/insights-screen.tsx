@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /**
  * /insights — the range dashboard (or one session's breakdown with `?session=`). Phones: one column in
@@ -6,7 +7,7 @@
  */
 import * as React from "react";
 import Link from "next/link";
-import { ChartColumnBigIcon, CheckIcon, ClipboardCheckIcon, TimerIcon } from "lucide-react";
+import { CheckIcon, ClipboardCheckIcon, TimerIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,6 @@ export function InsightsScreen() {
   if (!model.hasAnyData) {
     return (
       <EmptyState
-        icon={<ChartColumnBigIcon />}
         title="Your hours, days and patterns appear here after your first shift."
         action={
           <Button asChild>
@@ -111,11 +111,11 @@ export function InsightsScreen() {
       />
 
       {summary.sessionIds.length === 0 ? (
-        <Card variant="raised" padding="sm" className="flex-row flex-wrap items-center gap-3">
+        <Card padding="sm" className="flex-row flex-wrap items-center gap-3">
           <p className="min-w-0 flex-1 text-sm">{noShiftsSentence(range, params.range, today)}</p>
           {latest ? (
             <Button
-              variant="secondary"
+              variant="outline"
               size="sm"
               onClick={() => navigate({ ...params, range: params.range === "custom" ? "week" : params.range, date: latest.anchor, from: null, to: null })}
             >
@@ -162,7 +162,7 @@ function WeekReview({ weekOf }: { weekOf: string }) {
   }
   return (
     <Button
-      variant="soft"
+      variant="outline"
       size="sm"
       disabled={busy}
       onClick={async () => {

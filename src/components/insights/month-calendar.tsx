@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /**
  * E. Month calendar: net hours per date, tinted by level. A small ring marks dates whose time comes

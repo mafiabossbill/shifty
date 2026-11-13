@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /**
  * C. Activity heatmap for the last 7 / 30 / 90 days: week rows from the person's week start, rounded

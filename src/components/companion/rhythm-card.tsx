@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R4 (companion)
 import { CalendarCheckIcon, MoonStarIcon, SnowflakeIcon, SunIcon } from "lucide-react";
 
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

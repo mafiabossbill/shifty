@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R2 (sessions)
 import { formatDate, formatDuration } from "@/lib/format";
 import type { DaySplit } from "@/lib/sessions/geometry";
 import { cn } from "@/lib/utils";

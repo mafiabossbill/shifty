@@ -1,9 +1,10 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /** `?session=<id>`: one session's allocation — its ribbon and what it adds to each calendar date. */
 import * as React from "react";
 import Link from "next/link";
-import { ArrowLeftIcon, ArrowRightIcon, SearchXIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,10 +45,9 @@ export function SessionBreakdownView({
       <div className="grid gap-4">
         {back}
         <EmptyState
-          icon={<SearchXIcon />}
           title={inTrash ? "This session is in the trash, so it isn't counted." : "This session isn't on this device."}
           action={
-            <Button asChild variant="secondary">
+            <Button asChild variant="outline">
               <Link href={inTrash ? "/sessions/trash" : "/sessions"}>{inTrash ? "Open trash" : "All sessions"}</Link>
             </Button>
           }
@@ -67,7 +67,7 @@ export function SessionBreakdownView({
       <Card padding="lg" role="region" aria-labelledby="session-breakdown-title">
         <CardHeader
           action={
-            <Button asChild variant="soft" size="sm">
+            <Button asChild variant="outline" size="sm">
               <Link href={sessionHref(b.row.sessionId)}>
                 Open session
                 <ArrowRightIcon aria-hidden />
@@ -81,10 +81,10 @@ export function SessionBreakdownView({
           <CardDescription className="tabular">{spanText(b.row, clock, today)}</CardDescription>
         </CardHeader>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-          <StatTile variant="raised" label="Net worked" value={formatDuration(b.row.netMs)} hint={b.row.running ? "Still running" : undefined} />
-          <StatTile variant="raised" label="Breaks" value={formatDuration(b.row.breakMs)} />
-          <StatTile variant="raised" label="Clocked time" value={formatDuration(b.row.netMs + b.row.breakMs)} />
-          <StatTile variant="raised" label="Calendar days" value={String(b.row.days.length)} hint={b.row.days.length > 1 ? "Crosses midnight" : "Within one day"} />
+          <StatTile label="Net worked" value={formatDuration(b.row.netMs)} hint={b.row.running ? "Still running" : undefined} />
+          <StatTile label="Breaks" value={formatDuration(b.row.breakMs)} />
+          <StatTile label="Clocked time" value={formatDuration(b.row.netMs + b.row.breakMs)} />
+          <StatTile label="Calendar days" value={String(b.row.days.length)} hint={b.row.days.length > 1 ? "Crosses midnight" : "Within one day"} />
         </div>
         <RibbonChart
           ribbon={ribbon}

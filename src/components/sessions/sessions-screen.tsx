@@ -1,6 +1,7 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
-import { HistoryIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -72,10 +73,9 @@ export function SessionsScreen() {
       <Page>
         <PageHeader title="Sessions" actions={trashCount ? actions : undefined} />
         <EmptyState
-          icon={<HistoryIcon />}
           title="Every shift you finish is listed here, newest first."
           action={
-            <Button asChild variant="secondary">
+            <Button asChild variant="outline">
               <Link href="/sessions/new">
                 <PlusIcon />
                 Add a missed session
@@ -107,7 +107,7 @@ export function SessionsScreen() {
           <EmptyState
             title={query.q ? `No sessions match “${query.q}”.` : "No sessions match these filters."}
             action={
-              <Button variant="secondary" onClick={() => setQuery({ ...DEFAULT_QUERY, sort: query.sort })}>
+              <Button variant="outline" onClick={() => setQuery({ ...DEFAULT_QUERY, sort: query.sort })}>
                 Clear search and filters
               </Button>
             }
@@ -131,7 +131,7 @@ export function SessionsScreen() {
             </Card>
             {shown.length > n ? (
               <div className="flex flex-col items-center gap-1">
-                <Button variant="secondary" onClick={() => setLimit({ key: queryKey, n: n + PAGE })}>
+                <Button variant="outline" onClick={() => setLimit({ key: queryKey, n: n + PAGE })}>
                   Show {Math.min(PAGE, shown.length - n)} more
                 </Button>
                 <span className="text-xs text-muted-foreground tabular">

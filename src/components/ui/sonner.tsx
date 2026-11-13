@@ -24,15 +24,15 @@ function Toaster(props: ToasterProps) {
       }}
       toastOptions={{
         classNames: {
-          toast: "!rounded-[16px] !border-border !bg-popover !text-popover-foreground !shadow-raised !font-sans !text-sm !gap-3",
-          title: "!font-medium",
-          description: "!text-muted-foreground",
-          actionButton: "!h-8 !rounded-[10px] !bg-primary !px-3 !text-primary-foreground !font-medium",
-          cancelButton: "!h-8 !rounded-[10px] !bg-raised !px-3 !text-foreground",
-          success: "[&_[data-icon]]:!text-success",
-          error: "[&_[data-icon]]:!text-danger",
-          warning: "[&_[data-icon]]:!text-warning",
-          info: "[&_[data-icon]]:!text-info",
+          toast: "gap-3! rounded-lg! border-border! bg-popover! font-sans! text-body! text-popover-foreground! shadow-overlay!",
+          title: "font-semibold!",
+          description: "text-muted-foreground!",
+          actionButton: "h-7! rounded-md! bg-primary! px-3! font-semibold! text-primary-foreground! max-md:h-9!",
+          cancelButton: "h-7! rounded-md! border! border-control! bg-transparent! px-3! text-foreground! max-md:h-9!",
+          success: "[&_[data-icon]]:text-emerald-600!",
+          error: "[&_[data-icon]]:text-red-600!",
+          warning: "[&_[data-icon]]:text-amber-600!",
+          info: "[&_[data-icon]]:text-blue-600!",
         },
       }}
       style={

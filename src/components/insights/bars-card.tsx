@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /**
  * D. Net per day (or week) with breaks stacked faintly on top and the target as a dashed step line

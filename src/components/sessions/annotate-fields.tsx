@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import { CheckIcon } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";

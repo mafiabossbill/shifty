@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * A single-value slider (goal hours, mood, energy). Arrow keys step, PageUp/PageDown jump.
  * Give it an aria-label and, when the number isn't obvious, `valueText` (read out instead of the raw number).
+ * Show the chosen value in words next to it: the thumb's position alone is not an answer.
  */
 function Slider({
   className,
@@ -30,16 +31,17 @@ function Slider({
       value={value === undefined ? undefined : [value]}
       defaultValue={defaultValue === undefined ? undefined : [defaultValue]}
       onValueChange={onValueChange ? (values) => onValueChange(values[0] ?? 0) : undefined}
-      className={cn("relative flex h-11 w-full touch-none items-center select-none data-disabled:opacity-50", className)}
+      className={cn("relative flex h-8 w-full touch-none items-center select-none data-disabled:opacity-50 max-md:h-10", className)}
       {...props}
     >
-      <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-track">
-        <SliderPrimitive.Range className="absolute h-full rounded-full bg-brand" />
+      <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-neutral-200">
+        <SliderPrimitive.Range className="absolute h-full rounded-full bg-neutral-800" />
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb
         aria-label={ariaLabel}
         aria-valuetext={valueText}
-        className="block size-6 cursor-grab rounded-full border-2 border-brand bg-white shadow-[0_1px_4px_rgb(0_0_0/0.25)] transition-[box-shadow] focus-ring active:cursor-grabbing"
+        data-touch-target
+        className="block size-5 cursor-grab rounded-full border border-control bg-background shadow-raised active:cursor-grabbing dark:bg-neutral-900"
       />
     </SliderPrimitive.Root>
   );

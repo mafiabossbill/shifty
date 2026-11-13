@@ -1,8 +1,9 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import * as React from "react";
 import Link from "next/link";
-import { MapPinOffIcon, Trash2Icon } from "lucide-react";
+import { Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -120,14 +121,14 @@ export function PrivacySettings() {
               <Button variant="outline" size="sm" aria-pressed={showCoords} onClick={() => setShowCoords((v) => !v)}>
                 {showCoords ? "Hide coordinates" : "Show coordinates"}
               </Button>
-              <Button variant="danger" size="sm" disabled={busy} onClick={() => void deleteAll()}>
+              <Button variant="destructive" size="sm" disabled={busy} onClick={() => void deleteAll()}>
                 Delete all
               </Button>
             </div>
           ) : null}
         </div>
         {points.length === 0 ? (
-          <EmptyState icon={<MapPinOffIcon />} title="No location points are stored." />
+          <EmptyState title="No location points are stored." />
         ) : (
           <ul className="divide-y divide-border rounded-card border border-border bg-card shadow-card">
             {points.slice(0, shown).map((p) => {
@@ -163,7 +164,7 @@ export function PrivacySettings() {
           </ul>
         )}
         {points.length > shown ? (
-          <Button variant="secondary" className="justify-self-center" onClick={() => setShown((n) => n + PAGE)}>
+          <Button variant="outline" className="justify-self-center" onClick={() => setShown((n) => n + PAGE)}>
             Show more ({points.length - shown} older)
           </Button>
         ) : null}

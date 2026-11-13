@@ -1,7 +1,8 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import * as React from "react";
-import { LocateFixedIcon, MapPinIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { LocateFixedIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -103,7 +104,7 @@ export function PlacesSettings() {
 
       <SettingsGroup title="Remembered places" id="places">
         {places.length === 0 ? (
-          <EmptyState variant="inline" icon={<MapPinIcon />} title="No places yet. Add one where you are now." />
+          <EmptyState variant="inline" title="No places yet. Add one where you are now." />
         ) : (
           places.map((p) => <PlaceRow key={p.id} place={p} onSave={save} onRemove={() => void remove(p)} />)
         )}
@@ -123,7 +124,7 @@ export function PlacesSettings() {
           />
         ) : (
           <div className="grid gap-2">
-            <Button variant="soft" className="w-fit" onClick={() => void locateHere()} disabled={locating}>
+            <Button variant="outline" className="w-fit" onClick={() => void locateHere()} disabled={locating}>
               <LocateFixedIcon />
               {locating ? "Finding you…" : "Use my current location"}
             </Button>
@@ -150,7 +151,7 @@ export function PlacesSettings() {
                 </span>
               </div>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 onClick={() => setDraft({ latitude: p.latitude, longitude: p.longitude, accuracyM: p.accuracyM, source: `Where “${p.sessionTitle}” started` })}
               >

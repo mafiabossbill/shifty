@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /**
  * L. Shareable recap: an SVG card rendered to PNG in the browser, shared with the system sheet when it
@@ -112,7 +113,7 @@ export function ShareRecap({ model, kind, today, defaultGoalMs }: { model: Insig
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="secondary" size="sm">
+        <Button variant="outline" size="sm">
           <Share2Icon aria-hidden />
           {label}
         </Button>
@@ -142,7 +143,7 @@ export function ShareRecap({ model, kind, today, defaultGoalMs }: { model: Insig
           />
         ) : null}
         <DialogFooter>
-          <Button variant="secondary" onClick={() => run("download")} disabled={busy}>
+          <Button variant="outline" onClick={() => run("download")} disabled={busy}>
             <DownloadIcon aria-hidden />
             Download
           </Button>

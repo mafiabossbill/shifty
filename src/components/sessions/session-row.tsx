@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import Link from "next/link";
 import { memo, useMemo } from "react";

@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R4 (companion)
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";

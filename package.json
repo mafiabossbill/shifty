@@ -23,7 +23,9 @@
     "db:check-rls": "node --env-file-if-exists=.env.local --import tsx scripts/check-rls.ts",
     "db:local-check": "bash scripts/db-local-check.sh",
     "pwa:icons": "node scripts/generate-icons.mjs",
-    "legal:check": "node --import tsx scripts/legal-check.ts"
+    "legal:check": "node --import tsx scripts/legal-check.ts",
+    "design:check": "node --import tsx scripts/design-check.ts",
+    "design:shots": "node --import tsx scripts/design-shots.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

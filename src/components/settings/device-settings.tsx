@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import { PlatformCapabilities } from "@/components/pwa/capabilities";
 import { InstallGuide } from "@/components/pwa/install-guide";

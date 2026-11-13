@@ -17,9 +17,10 @@ export interface ConfirmOptions {
   title: string;
   /** Say what happens and whether it can be undone. */
   description?: React.ReactNode;
+  /** A verb and a noun that make sense read alone: "Delete session", never "OK" or "Yes". */
   confirmLabel?: string;
   cancelLabel?: string;
-  /** Danger confirm button. Use for delete, discard, empty trash and other destructive actions. */
+  /** Red confirm button: for delete, discard, empty trash and other losses. The only place red fills a button. */
   destructive?: boolean;
 }
 
@@ -30,8 +31,9 @@ const ConfirmContext = React.createContext<((options: ConfirmOptions) => Promise
 /**
  * The one confirmation dialog for the app. Mounted once (app layout), then:
  *   const confirm = useConfirm();
- *   if (!(await confirm({ title: "Delete …?", description: "It stays in Trash for 30 days.", destructive: true }))) return;
- * Focus starts on Cancel; Escape and clicking outside both cancel.
+ *   if (!(await confirm({ title: "Delete …?", description: "It stays in Trash for 30 days.", confirmLabel: "Delete session", destructive: true }))) return;
+ * Focus starts on the safe button; Escape and clicking outside both cancel.
+ * Routine actions are never confirmed: a confirmation dismissed by reflex stops working when it matters.
  */
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const [options, setOptions] = React.useState<ConfirmOptions | null>(null);
@@ -65,15 +67,15 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             cancelRef.current?.focus();
           }}
         >
-          <DialogHeader className="pr-0">
+          <DialogHeader>
             <DialogTitle>{options?.title}</DialogTitle>
             {options?.description ? <DialogDescription>{options.description}</DialogDescription> : null}
           </DialogHeader>
           <DialogFooter>
-            <Button ref={cancelRef} variant="secondary" size="md" className="max-sm:h-12" onClick={() => settle(false)}>
+            <Button ref={cancelRef} variant="outline" onClick={() => settle(false)}>
               {options?.cancelLabel ?? "Cancel"}
             </Button>
-            <Button variant={options?.destructive ? "danger" : "primary"} size="md" className="max-sm:h-12" onClick={() => settle(true)}>
+            <Button variant={options?.destructive ? "destructive" : "default"} onClick={() => settle(true)}>
               {options?.confirmLabel ?? (options?.destructive ? "Delete" : "Confirm")}
             </Button>
           </DialogFooter>

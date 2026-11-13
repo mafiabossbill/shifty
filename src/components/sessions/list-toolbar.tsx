@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import { ListFilterIcon, SearchIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -207,7 +208,7 @@ function FiltersSheet({
           />
         </SheetBody>
         <SheetFooter>
-          <Button variant="secondary" size="lg" disabled={count === 0} onClick={() => setQuery((q) => clearFilters({ ...q, q: q.q }))}>
+          <Button variant="outline" size="lg" disabled={count === 0} onClick={() => setQuery((q) => clearFilters({ ...q, q: q.q }))}>
             Clear filters
           </Button>
           <Button size="lg" onClick={() => onOpenChange(false)}>

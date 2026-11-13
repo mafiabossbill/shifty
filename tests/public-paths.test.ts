@@ -36,6 +36,16 @@ describe("public paths", () => {
     }
   });
 
+  it("opens the design gallery in development only", () => {
+    expect(isPublicPath("/design", "development")).toBe(true);
+    expect(isPublicPath("/design/screens/anything", "development")).toBe(true);
+    expect(isPublicPath("/design", "production")).toBe(false);
+    expect(isPublicPath("/design/screens/anything", "production")).toBe(false);
+    expect(isPublicPath("/designs", "development")).toBe(false);
+    // The tracking shell stays public in production.
+    expect(isPublicPath("/sessions/new", "production")).toBe(true);
+  });
+
   it("only follows same-site ?next= paths", () => {
     expect(safeNextPath("/projects?status=active")).toBe("/projects?status=active");
     expect(safeNextPath("//evil.example")).toBe("/");

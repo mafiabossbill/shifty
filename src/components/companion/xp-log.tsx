@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R4 (companion)
 
 import * as React from "react";
 import Link from "next/link";
@@ -20,7 +21,7 @@ export function XpLog({ rows, sessionExists }: { rows: XpLogRow[]; sessionExists
         variant="inline"
         title="No XP yet. Your first session starts the log."
         action={
-          <Button asChild variant="soft">
+          <Button asChild variant="outline">
             <Link href="/">Go to Home</Link>
           </Button>
         }
@@ -71,7 +72,7 @@ export function XpLog({ rows, sessionExists }: { rows: XpLogRow[]; sessionExists
         ))}
       </ul>
       {rows.length > shown ? (
-        <Button variant="secondary" className="justify-self-center" onClick={() => setShown((n) => n + PAGE)}>
+        <Button variant="outline" className="justify-self-center" onClick={() => setShown((n) => n + PAGE)}>
           Show more ({rows.length - shown} older)
         </Button>
       ) : null}

@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /**
  * A. "Hours in motion": the hero. Up to 7 values → concentric day rings (today's ring is the live one);
@@ -53,7 +54,7 @@ export function HoursRing({
   const differs = model.otherMode.netMs !== summary.netMs;
 
   return (
-    <Card variant="hero" padding="lg" className={cn("min-w-0 items-center gap-5", className)} role="region" aria-label="Hours in motion">
+    <Card padding="lg" className={cn("min-w-0 items-center gap-5 overflow-hidden", className)} role="region" aria-label="Hours in motion">
       <div className="flex w-full items-start justify-between gap-3">
         <div className="grid gap-0.5">
           <h2 className="font-display text-base font-semibold tracking-tight">Hours in motion</h2>
@@ -62,7 +63,7 @@ export function HoursRing({
           </p>
         </div>
         <div className="flex items-center gap-1.5">
-          {live ? <Pill tone="accent" dot live size="sm">Live</Pill> : null}
+          {live ? <Pill tone="info" dot>Live</Pill> : null}
           <Button variant="ghost" size="xs" className="text-muted-foreground" aria-pressed={asTable} onClick={() => setAsTable((v) => !v)}>
             {asTable ? "Chart" : "Table"}
           </Button>
@@ -120,7 +121,7 @@ export function HoursRing({
               const href = sessionsHref(ids, active ? undefined : model.range);
               if (!href) return <span className="text-xs text-muted-foreground">{active ? "No time on this day" : null}</span>;
               return (
-                <Button asChild variant="soft" size="sm">
+                <Button asChild variant="outline" size="sm">
                   <Link href={href}>
                     {active ? `View ${datumLabel(active, today)}` : `View ${plural(ids.length, "session")}`}
                     <ArrowRightIcon aria-hidden />

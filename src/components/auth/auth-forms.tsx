@@ -4,55 +4,70 @@ import * as React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
+import { CircleAlertIcon } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { requestPasswordReset, signIn, signUp, updatePassword, type FormState } from "@/lib/auth-actions";
+import { MIN_PASSWORD_LENGTH } from "@/lib/auth-rules";
 import { getBrowserClient } from "@/lib/supabase/client";
 
-function Field({ label, ...props }: { label: string } & React.ComponentProps<typeof Input>) {
-  return (
-    <div className="grid gap-1.5">
-      <Label htmlFor={props.id}>{label}</Label>
-      <Input {...props} />
-    </div>
-  );
-}
+/*
+ * Sign-in, sign-up and password forms. One column, the label above each field (Field), the answer
+ * from the server at the top of the form as an icon and a sentence, one solid button. Links to the
+ * neighbouring pages are underlined text under the form.
+ */
 
+const linkClass = "underline decoration-control underline-offset-4 hover:decoration-foreground";
+/** Under a form: the one solid button first, then links. Phones: stacked, the button full width. */
+const actionsClass = "flex flex-wrap items-center gap-x-4 gap-y-3 max-md:flex-col max-md:items-stretch";
+const besideButtonClass = `${linkClass} max-md:flex max-md:min-h-11 max-md:items-center`;
+
+/** What the server said about the whole form: a problem to fix (red, with an icon) or a confirmation. */
 function Status({ state }: { state: FormState }) {
   if (state.error) {
     return (
-      <p role="alert" className="text-[13px] text-red-700">
+      <p role="alert" className="flex items-start gap-1.5 font-semibold text-red-700">
+        <CircleAlertIcon className="mt-1 size-3.5 shrink-0" aria-hidden />
         {state.error}
       </p>
     );
   }
-  if (state.message) return <p className="text-[13px] text-muted-foreground">{state.message}</p>;
+  if (state.message) return <p role="status">{state.message}</p>;
   return null;
 }
 
 const LINK_ERRORS: Record<string, string> = { link: "That link is invalid or has expired. Request a new one." };
 
-export function LoginForm() {
+/** `initialState` is for the design gallery only: it shows the form as the server would have answered it. */
+export function LoginForm({ initialState }: { initialState?: FormState }) {
   const params = useSearchParams();
-  const [state, action, pending] = React.useActionState(signIn, { error: LINK_ERRORS[params.get("error") ?? ""] });
+  const [state, action, pending] = React.useActionState(signIn, initialState ?? { error: LINK_ERRORS[params.get("error") ?? ""] });
   return (
     <form action={action} className="grid gap-4">
       <input type="hidden" name="next" value={params.get("next") ?? ""} />
-      <Field label="Email" id="email" name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} defaultValue={state.email} required autoFocus />
-      <Field label="Password" id="password" name="password" type="password" autoComplete="current-password" required />
       <Status state={state} />
-      <Button type="submit" disabled={pending} className="h-10">
-        {pending ? "Signing in…" : "Sign in"}
-      </Button>
-      <div className="flex justify-between text-[13px] text-muted-foreground">
-        <Link href="/forgot-password" className="hover:text-foreground">
+      <Field label="Email">
+        <Input id="email" name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} defaultValue={state.email} required autoFocus />
+      </Field>
+      <Field label="Password">
+        <Input id="password" name="password" type="password" autoComplete="current-password" required />
+      </Field>
+      <div className={actionsClass}>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Signing in…" : "Sign in"}
+        </Button>
+        <Link href="/forgot-password" className={besideButtonClass}>
           Forgot password?
         </Link>
-        <Link href="/signup" className="hover:text-foreground">
+      </div>
+      <p className="text-muted-foreground">
+        New here?{" "}
+        <Link href="/signup" className={`${linkClass} text-foreground`}>
           Create account
         </Link>
-      </div>
+      </p>
     </form>
   );
 }
@@ -61,27 +76,35 @@ export function SignUpForm() {
   const [state, action, pending] = React.useActionState(signUp, {});
   return (
     <form action={action} className="grid gap-4">
-      <Field label="Full name" id="full_name" name="full_name" autoComplete="name" required />
-      <Field label="Work email" id="email" name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} defaultValue={state.email} required />
-      <Field label="Password" id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
       <Status state={state} />
-      <Button type="submit" disabled={pending} className="h-10">
-        {pending ? "Creating account…" : "Create account"}
-      </Button>
-      <p className="text-[12px] leading-5 text-muted-foreground">
+      <Field label="Full name">
+        <Input id="full_name" name="full_name" autoComplete="name" required />
+      </Field>
+      <Field label="Email">
+        <Input id="email" name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} defaultValue={state.email} required />
+      </Field>
+      <Field label="Password" hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}>
+        <Input id="password" name="password" type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required />
+      </Field>
+      <p className="text-caption text-muted-foreground">
         By creating an account you agree to the{" "}
-        <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+        <Link href="/terms" className={linkClass}>
           Terms of service
         </Link>{" "}
         and{" "}
-        <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+        <Link href="/privacy" className={linkClass}>
           Privacy policy
         </Link>
         .
       </p>
-      <Link href="/login" className="text-[13px] text-muted-foreground hover:text-foreground">
-        Already have an account? Sign in
-      </Link>
+      <div className={actionsClass}>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Creating account…" : "Create account"}
+        </Button>
+        <Link href="/login" className={besideButtonClass}>
+          Already have an account? Sign in
+        </Link>
+      </div>
     </form>
   );
 }
@@ -90,14 +113,18 @@ export function ForgotPasswordForm() {
   const [state, action, pending] = React.useActionState(requestPasswordReset, {});
   return (
     <form action={action} className="grid gap-4">
-      <Field label="Email" id="email" name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} defaultValue={state.email} required autoFocus />
       <Status state={state} />
-      <Button type="submit" disabled={pending} className="h-10">
-        {pending ? "Sending…" : "Send reset link"}
-      </Button>
-      <Link href="/login" className="text-[13px] text-muted-foreground hover:text-foreground">
-        Back to sign in
-      </Link>
+      <Field label="Email">
+        <Input id="email" name="email" type="email" autoComplete="email" autoCapitalize="none" spellCheck={false} defaultValue={state.email} required autoFocus />
+      </Field>
+      <div className={actionsClass}>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Sending…" : "Send reset link"}
+        </Button>
+        <Link href="/login" className={besideButtonClass}>
+          Back to sign in
+        </Link>
+      </div>
     </form>
   );
 }
@@ -136,9 +163,9 @@ export function ResetPasswordForm() {
   const [state, action, pending] = React.useActionState(updatePassword, {});
   if (session === "invalid") {
     return (
-      <p className="text-[13px] text-muted-foreground">
+      <p>
         This reset link is invalid or has expired.{" "}
-        <Link href="/forgot-password" className="font-medium text-foreground underline-offset-4 hover:underline">
+        <Link href="/forgot-password" className={linkClass}>
           Request a new one
         </Link>
         .
@@ -147,12 +174,18 @@ export function ResetPasswordForm() {
   }
   return (
     <form action={action} className="grid gap-4">
-      <Field label="New password" id="password" name="password" type="password" autoComplete="new-password" minLength={8} required autoFocus />
-      <Field label="Confirm password" id="confirm" name="confirm" type="password" autoComplete="new-password" minLength={8} required />
       <Status state={state} />
-      <Button type="submit" disabled={pending || session !== "ready"} className="h-10">
-        {pending ? "Saving…" : "Save password"}
-      </Button>
+      <Field label="New password" hint={`At least ${MIN_PASSWORD_LENGTH} characters.`}>
+        <Input id="password" name="password" type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required autoFocus />
+      </Field>
+      <Field label="Confirm password">
+        <Input id="confirm" name="confirm" type="password" autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} required />
+      </Field>
+      <div className={actionsClass}>
+        <Button type="submit" disabled={pending || session !== "ready"}>
+          {pending ? "Saving…" : "Save password"}
+        </Button>
+      </div>
     </form>
   );
 }

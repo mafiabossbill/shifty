@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import * as React from "react";
 import Link from "next/link";
@@ -129,7 +130,7 @@ export function AccountSettings() {
                   </Button>
                 ) : null}
                 {sync.mode === "account" ? (
-                  <Button variant="secondary" disabled={sync.phase === "syncing"} onClick={() => void store.syncNow()}>
+                  <Button variant="outline" disabled={sync.phase === "syncing"} onClick={() => void store.syncNow()}>
                     <RefreshCwIcon />
                     {sync.phase === "syncing" ? "Syncing…" : "Sync now"}
                   </Button>
@@ -144,7 +145,7 @@ export function AccountSettings() {
                 <Button asChild>
                   <Link href="/login?next=/settings/account">Sign in</Link>
                 </Button>
-                <Button asChild variant="secondary">
+                <Button asChild variant="outline">
                   <Link href="/signup">Create account</Link>
                 </Button>
               </>
@@ -166,7 +167,7 @@ export function AccountSettings() {
             Removes every session, setting and Mochi&apos;s progress from this browser.{" "}
             {sync.mode === "account" ? "Anything already synced stays on your account." : "Without an account, this can't be undone — export a backup first."}
           </p>
-          <Button variant="danger" className="w-fit" onClick={() => setErasing(true)} disabled={view.demo}>
+          <Button variant="destructive" className="w-fit" onClick={() => setErasing(true)} disabled={view.demo}>
             Erase this device
           </Button>
           {view.demo ? <p className="text-xs text-muted-foreground">Exit demo first: demo data disappears on its own.</p> : null}
@@ -269,7 +270,7 @@ function EraseDialog({ open, onOpenChange, pending }: { open: boolean; onOpenCha
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="danger" disabled={!ready || busy}>
+            <Button type="submit" variant="destructive" disabled={!ready || busy}>
               {busy ? "Erasing…" : "Erase everything here"}
             </Button>
           </DialogFooter>

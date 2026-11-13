@@ -19,8 +19,8 @@ import {
 
 /*
  * Appearance for this tab. The inline script in the root layout already set
- * <html class="dark" data-accent="…" data-motion="…"> before first paint; this keeps
- * them in sync when a choice changes here, in another tab, or (for System) on the device.
+ * <html class="dark" data-motion="…"> before first paint; this keeps them in sync when a
+ * choice changes here, in another tab, or (for System) on the device.
  */
 
 const APPEARANCE_EVENT = "app:theme";
@@ -86,10 +86,10 @@ function subscribe(onChange: () => void) {
   };
 }
 
-/** <html> class, color-scheme and the browser/status-bar color. */
+/** <html> class, color-scheme and the browser/status-bar colour. */
 function applyTheme(resolved: ResolvedTheme) {
   const root = document.documentElement;
-  // Swapping themes shouldn't animate every color transition on the page.
+  // Swapping themes shouldn't animate every colour transition on the page.
   root.classList.add("theme-switching");
   root.classList.toggle("dark", resolved === "dark");
   root.style.colorScheme = resolved;
@@ -104,6 +104,7 @@ export interface ThemeContextValue {
   theme: Theme;
   resolvedTheme: ResolvedTheme;
   setTheme: (theme: Theme) => void;
+  /** Stored only: the interface has one action colour (R-D5), so no colour follows this. */
   accent: Accent;
   setAccent: (accent: Accent) => void;
   /** The stored choice ("system" follows the device). */
@@ -138,10 +139,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     applyTheme(resolvedTheme);
   }, [resolvedTheme]);
-
-  React.useEffect(() => {
-    document.documentElement.setAttribute("data-accent", accent);
-  }, [accent]);
 
   React.useEffect(() => {
     const root = document.documentElement;

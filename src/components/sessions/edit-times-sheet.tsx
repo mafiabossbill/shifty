@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import { RotateCcwIcon } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -125,7 +126,7 @@ function EditTimesForm({ session, state, clock, onDone }: { session: ShiftSessio
         {stale || failure?.stale ? (
           <div role="alert" className="flex flex-wrap items-center gap-3 rounded-control bg-warning-soft p-3 text-sm text-warning-ink">
             <p className="min-w-0 flex-1 font-medium">This session changed since you opened it. Review the latest version, then make your edit again.</p>
-            <Button size="sm" variant="secondary" onClick={reload}>
+            <Button size="sm" variant="outline" onClick={reload}>
               <RotateCcwIcon />
               Load latest
             </Button>
@@ -154,7 +155,7 @@ function EditTimesForm({ session, state, clock, onDone }: { session: ShiftSessio
         ) : null}
       </SheetBody>
       <SheetFooter>
-        <Button variant="secondary" size="lg" onClick={onDone}>
+        <Button variant="outline" size="lg" onClick={onDone}>
           Cancel
         </Button>
         {verdict?.status === "overlap" && !stale ? (

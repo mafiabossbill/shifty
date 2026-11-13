@@ -11,6 +11,14 @@ export const LEGAL_PATHS = ["/privacy", "/terms", "/cookies", "/data-deletion"] 
 
 export const PUBLIC_PATHS = [...DEVICE_SHELL_PATHS, ...AUTH_PATHS, ...LEGAL_PATHS] as const;
 
-export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some((path) => pathname === path || (path !== "/" && pathname.startsWith(`${path}/`)));
+/**
+ * The design gallery (src/app/design): the system and every screen rendered with sample data and no
+ * session, so they can be looked at and photographed while they are built. It exists in development
+ * only: in a production build its layout answers 404 and this path is not public.
+ */
+export const DESIGN_GALLERY_PATH = "/design";
+
+export function isPublicPath(pathname: string, env: string | undefined = process.env.NODE_ENV): boolean {
+  const paths: readonly string[] = env === "production" ? PUBLIC_PATHS : [...PUBLIC_PATHS, DESIGN_GALLERY_PATH];
+  return paths.some((path) => pathname === path || (path !== "/" && pathname.startsWith(`${path}/`)));
 }

@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 import * as React from "react";
 import { ChevronLeftIcon, ChevronRightIcon, CalendarDaysIcon, Layers2Icon } from "lucide-react";

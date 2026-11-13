@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R1 (home)
 
 import { CoffeeIcon, MapPinIcon, MoonIcon, PlayIcon, RotateCwIcon, SquareIcon } from "lucide-react";
 
@@ -51,10 +52,10 @@ export function ActiveHero({ session, now, clock, ringSize, busy, locating, onSt
     gp.overageMs > 0 ? `Goal reached, ${spokenDuration(gp.overageMs)} past it` : `${Math.round(gp.ratio * 100)} percent, ${spokenDuration(gp.remainingMs)} to go`;
 
   return (
-    <Card variant="hero" padding="lg" className="items-center gap-5 text-center lg:gap-6">
+    <Card padding="lg" className="items-center gap-5 overflow-hidden text-center lg:gap-6">
       <HeroGlow />
       <div className="relative flex w-full flex-wrap items-center justify-between gap-2">
-        <Pill tone={pill.tone} live>
+        <Pill tone={pill.tone}>
           {onBreak ? "On break" : "Working"}
         </Pill>
         <span className="text-xs text-muted-foreground">
@@ -68,8 +69,6 @@ export function ActiveHero({ session, now, clock, ringSize, busy, locating, onSt
         label={ringLabel}
         valueText={ringValue}
         size={ringSize}
-        tone={onBreak ? "celebrate" : "brand"}
-        halo
         className="relative"
       >
         <span className="type-eyebrow text-muted-foreground">Net worked</span>
@@ -118,11 +117,11 @@ export function ActiveHero({ session, now, clock, ringSize, busy, locating, onSt
 
       <div className="relative grid w-full max-w-md gap-3 sm:grid-cols-2">
         {onBreak ? (
-          <Button size="lg" variant="soft" disabled={busy} onClick={onEndBreak} className="h-14 w-full md:h-14">
+          <Button size="lg" variant="outline" disabled={busy} onClick={onEndBreak} className="h-14 w-full md:h-14">
             <PlayIcon className="fill-current" aria-hidden /> End break
           </Button>
         ) : (
-          <Button size="lg" variant="secondary" disabled={busy} onClick={onStartBreak} className="h-14 w-full md:h-14">
+          <Button size="lg" variant="outline" disabled={busy} onClick={onStartBreak} className="h-14 w-full md:h-14">
             <CoffeeIcon aria-hidden /> Start break
           </Button>
         )}
@@ -159,7 +158,7 @@ function LocationLine({ session, zone, now, locating, onRetry }: { session: Shif
           <MapPinIcon className="mr-1 -mt-0.5 inline size-3.5" aria-hidden />
           No location recorded for this session.
         </p>
-        <Button variant="soft" size="xs" onClick={onRetry} className="h-8">
+        <Button variant="outline" size="xs" onClick={onRetry} className="h-8">
           <RotateCwIcon aria-hidden /> Try again
         </Button>
       </div>
@@ -188,7 +187,7 @@ function LocationLine({ session, zone, now, locating, onRetry }: { session: Shif
         {LOCATION_STATUS_COPY[fix.status]}
       </p>
       {canRetry ? (
-        <Button variant="soft" size="xs" onClick={onRetry} className="h-8">
+        <Button variant="outline" size="xs" onClick={onRetry} className="h-8">
           <RotateCwIcon aria-hidden /> Try again
         </Button>
       ) : null}

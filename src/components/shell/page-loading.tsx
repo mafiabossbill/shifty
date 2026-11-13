@@ -1,15 +1,21 @@
+import { Page } from "@/components/shell/page";
 import { Skeleton } from "@/components/ui/skeleton";
 
-/** Route loading state: the outline of a page header, a hero and two cards. Never a full-screen spinner. */
+/** Route loading state: the outline of a figure and a few rows. Never a full-screen spinner. */
 export function PageLoading() {
   return (
-    <div className="mx-auto grid w-full max-w-[1280px] gap-4 px-4 pt-2 pb-10 md:px-6 lg:px-10 lg:pt-8" aria-busy="true" aria-label="Loading">
-      <Skeleton className="hidden h-9 w-56 lg:block" />
-      <Skeleton className="h-72 rounded-card" />
-      <div className="grid gap-4 md:grid-cols-2">
-        <Skeleton className="h-32 rounded-card" />
-        <Skeleton className="h-32 rounded-card" />
+    <Page>
+      <div className="grid gap-6" aria-busy="true" aria-label="Loading">
+        <div className="grid gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-8 w-40" />
+        </div>
+        <div className="grid gap-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-2/3" />
+        </div>
       </div>
-    </div>
+    </Page>
   );
 }

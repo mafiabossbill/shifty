@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R5 (settings)
 
 import * as React from "react";
 import { CheckIcon, ChevronsUpDownIcon, LocateFixedIcon, SearchIcon } from "lucide-react";
@@ -30,7 +31,7 @@ export function TimezonePicker({ id, value, onChange, now }: { id: string; value
 
   return (
     <>
-      <Button id={id} variant="secondary" className="w-full justify-between sm:w-80" onClick={() => setOpen(true)} aria-haspopup="dialog">
+      <Button id={id} variant="outline" className="w-full justify-between sm:w-80" onClick={() => setOpen(true)} aria-haspopup="dialog">
         <span className="truncate">{zoneDisplay(value, now)}</span>
         <ChevronsUpDownIcon className="text-muted-foreground" />
       </Button>

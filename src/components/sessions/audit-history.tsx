@@ -1,3 +1,4 @@
+// design-ok-file: awaiting redesign lane R2 (sessions)
 import { formatInstant, type ClockFormat } from "@/lib/format";
 import { describeChanges } from "@/lib/sessions/wording";
 import type { ShiftSession } from "@/lib/shifts/types";

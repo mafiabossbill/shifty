@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R3 (insights)
 
 /**
  * Shared pieces for the Insights charts (one system for every chart):
@@ -215,7 +216,7 @@ export function ChartTip({
       {children}
       {href && !pinned ? <p className="text-2xs text-muted-foreground">Click to {hrefLabel.toLowerCase()}</p> : null}
       {href && pinned ? (
-        <Button asChild variant="soft" size="xs" className="justify-self-start">
+        <Button asChild variant="outline" size="xs" className="justify-self-start">
           <Link href={href}>
             {hrefLabel}
             <ArrowRightIcon aria-hidden />

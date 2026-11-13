@@ -3,27 +3,21 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 /**
- * The content column inside <main>. `default` = the dashboard width (1200px), `narrow` = forms and settings.
- * Side padding follows the safe areas in landscape.
+ * The content column inside <main>. `default` is the work area (lists, Home, Insights: up to 1152px);
+ * `narrow` is for forms, settings and anything read top to bottom (672px), so lines and fields never
+ * stretch. The page edge is 16px on phones and 24px from tablets up (`px-page`).
+ * The column starts at the left edge, under the place's name in the top bar: one left edge for the
+ * whole screen. It is not centred, so nothing floats in the middle of a wide window.
  */
 export function Page({ children, width = "default", className }: { children: React.ReactNode; width?: "default" | "narrow"; className?: string }) {
-  return (
-    <div
-      className={cn(
-        "mx-auto w-full pt-2 pb-10 pr-[max(1rem,env(safe-area-inset-right,0px))] pl-[max(1rem,env(safe-area-inset-left,0px))] md:px-6 lg:px-10 lg:pt-8 lg:pb-14",
-        width === "default" ? "max-w-[1280px]" : "max-w-[720px] lg:max-w-[800px]",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cn("w-full px-page pt-4 pb-12 md:pt-6", width === "default" ? "max-w-6xl" : "max-w-2xl", className)}>{children}</div>;
 }
 
 /**
- * The page's <h1> + one line + actions. On phones the top bar already shows the title, so the
- * heading is visually hidden there (still the page's heading for screen readers); the description
- * and actions stay.
+ * The page's <h1>, plus an optional line and actions. The top bar already shows the place's name on
+ * every width, so the heading itself is for screen readers only; a title is a label for the content,
+ * not the content. The description and the actions are what show: side by side from 768px (actions
+ * at the right edge), stacked on phones (the line, then the actions).
  */
 export function PageHeader({
   title,
@@ -36,19 +30,17 @@ export function PageHeader({
   actions?: React.ReactNode;
   className?: string;
 }) {
-  const visibleOnPhone = Boolean(description || actions);
+  const visible = Boolean(description || actions);
   return (
-    <header className={cn("flex flex-wrap items-end gap-x-4 gap-y-3", visibleOnPhone ? "mb-5" : "max-lg:mb-0", "lg:mb-8", className)}>
-      <div className="grid min-w-0 flex-1 gap-1">
-        <h1 className="type-display max-lg:sr-only">{title}</h1>
-        {description ? <p className="max-w-prose text-sm text-muted-foreground">{description}</p> : null}
-      </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+    <header className={cn(visible && "mb-4 flex flex-col gap-3 md:mb-6 md:flex-row md:items-center md:gap-4", className)}>
+      <h1 className="sr-only">{title}</h1>
+      {description ? <p className="max-w-prose min-w-0 text-muted-foreground">{description}</p> : null}
+      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2 md:ml-auto">{actions}</div> : null}
     </header>
   );
 }
 
-/** A titled group of content on a page (h2 + optional action). */
+/** A titled group of content on a page (h2 + optional action). Sections sit 32px apart (`gap-8` on their parent). */
 export function PageSection({
   title,
   action,
@@ -63,8 +55,8 @@ export function PageSection({
   return (
     <section className={cn("grid gap-3", className)}>
       {title || action ? (
-        <div className="flex min-h-9 items-center gap-3">
-          {title ? <h2 className="font-display text-base font-semibold tracking-tight lg:text-lg">{title}</h2> : null}
+        <div className="flex min-h-8 items-center gap-3">
+          {title ? <h2 className="text-title font-semibold">{title}</h2> : null}
           {action ? <div className="ml-auto">{action}</div> : null}
         </div>
       ) : null}

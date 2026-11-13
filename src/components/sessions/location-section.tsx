@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import { EyeIcon, EyeOffIcon, LocateFixedIcon, MapPinIcon, MapPinOffIcon, Trash2Icon } from "lucide-react";
 import { useState } from "react";
@@ -104,7 +105,7 @@ export function LocationSection({ session, clock, readOnly }: { session: ShiftSe
           </Button>
         ) : null}
         {running && !readOnly ? (
-          <Button variant="soft" size="sm" onClick={retry} disabled={retrying}>
+          <Button variant="outline" size="sm" onClick={retry} disabled={retrying}>
             <LocateFixedIcon />
             {retrying ? "Asking…" : "Try location again"}
           </Button>

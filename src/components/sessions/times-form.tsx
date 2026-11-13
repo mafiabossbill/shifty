@@ -1,4 +1,5 @@
 "use client";
+// design-ok-file: awaiting redesign lane R2 (sessions)
 
 import { PlusIcon, TriangleAlertIcon, XIcon } from "lucide-react";
 import Link from "next/link";
@@ -160,7 +161,7 @@ export function TimesFields({
             </div>
           );
         })}
-        <Button variant="secondary" size="sm" className="justify-self-start" onClick={addBreak}>
+        <Button variant="outline" size="sm" className="justify-self-start" onClick={addBreak}>
           <PlusIcon />
           Add a break
         </Button>

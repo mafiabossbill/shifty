@@ -20,7 +20,7 @@ function DropdownMenuContent({ className, sideOffset = 4, ...props }: React.Comp
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-48 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+          "z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-48 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-overlay",
           className,
         )}
         {...props}
@@ -35,7 +35,7 @@ function DropdownMenuItem({ className, ...props }: React.ComponentProps<typeof D
     <DropdownMenuPrimitive.Item
       data-slot="dropdown-menu-item"
       className={cn(
-        "flex h-7 cursor-pointer items-center gap-2 rounded-sm px-2 text-[13px] outline-none select-none focus:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 max-md:h-11 max-md:text-sm [&_svg]:size-3.5 [&_svg]:shrink-0",
+        "flex h-7 cursor-pointer items-center gap-2 rounded-sm px-2 text-body outline-none select-none focus:bg-accent data-disabled:pointer-events-none data-disabled:opacity-50 max-md:h-11 [&_svg]:size-3.5 [&_svg]:shrink-0 [&_svg]:text-muted-foreground",
         className,
       )}
       {...props}
@@ -44,7 +44,7 @@ function DropdownMenuItem({ className, ...props }: React.ComponentProps<typeof D
 }
 
 function DropdownMenuLabel({ className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Label>) {
-  return <DropdownMenuPrimitive.Label data-slot="dropdown-menu-label" className={cn("px-2 py-1.5 text-[11px] text-muted-foreground", className)} {...props} />;
+  return <DropdownMenuPrimitive.Label data-slot="dropdown-menu-label" className={cn("px-2 py-1.5 text-caption text-muted-foreground", className)} {...props} />;
 }
 
 function DropdownMenuSeparator({ className, ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Separator>) {
