@@ -10,7 +10,7 @@
 | RAN ON | Bill's Mac (main checkout), not the cloud. No `.env`; device mode only. No database work of any kind |
 
 ## 0. Colour rework, 2026-11-15 (read this first)
-Bill rejected the look of PR #11 ("you choked the spirit": a generic grey-and-black app). The structure below stands; the colours are SHIFTY's own again. Decision **D22** replaces R-D2 and R-D5 for the foundation and withdraws D13. Branch `lane/r0-colours`, a second PR into `redesign` (#11 was already merged).
+Bill rejected the look of PR #11 ("you choked the spirit": a generic grey-and-black app). The structure below stands; the colours are SHIFTY's own again. Decision **D22** replaces R-D2 and R-D5 for the foundation and withdraws D13. Branch `lane/r0-colours`, PR #12 into `redesign` (#11 was already merged): https://github.com/mafiabossbill/shifty/pull/12
 
 | What | Now |
 | --- | --- |
