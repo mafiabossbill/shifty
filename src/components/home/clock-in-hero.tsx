@@ -85,7 +85,7 @@ export function ClockInHero({ goalSeconds, zone, localHour, projects, prompt, fi
             size="lg"
             disabled={busy}
             onClick={submit}
-            className="size-44 min-w-0 flex-col gap-1.5 px-0 text-xl tracking-[0.12em] uppercase md:size-48"
+            className="size-44 min-w-0 flex-col gap-1.5 rounded-full px-0 text-xl tracking-[0.12em] uppercase max-md:size-44 md:size-48"
             aria-describedby={`${id}-goal`}
           >
             <PlayIcon className="size-7 fill-current" aria-hidden />

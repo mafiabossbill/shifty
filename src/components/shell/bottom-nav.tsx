@@ -10,12 +10,12 @@ import { cn } from "@/lib/utils";
 /*
  * Phones and tablets (below 1024px): a flat bar with the five places, within thumb reach, clear of
  * the home indicator. In the layout's flex column (not fixed), so content and sheets never hide
- * behind it. The current tab is marked twice: darker text and a heavier label.
+ * behind it. The current tab is marked twice: the action colour and a heavier label.
  * Five tabs, not four and a More sheet: SHIFTY has exactly five places (factory/DECISIONS.md D18).
  */
 
 const tabClass = "flex min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 text-micro text-muted-foreground transition-colors hover:text-foreground active:bg-accent";
-const activeTabClass = "font-semibold text-foreground";
+const activeTabClass = "font-semibold text-primary hover:text-primary";
 
 /** The bar for a given path; `null` (URL not known yet) shows the same tabs with none current. */
 export function BottomNavFrame({ pathname = null }: { pathname?: string | null }) {

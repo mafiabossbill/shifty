@@ -2,7 +2,7 @@ import Link from "next/link";
 import { PlusIcon, SlidersHorizontalIcon } from "lucide-react";
 
 import { ControlsDemo, OverlayDemos } from "@/components/design/system-demos";
-import { ThemeSetting } from "@/components/theme/theme-setting";
+import { AccentSetting, ThemeSetting } from "@/components/theme/theme-setting";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -15,7 +15,7 @@ import { Pill, SessionStatusPill, StatusPill, SyncStatePill } from "@/components
 import { Textarea } from "@/components/ui/textarea";
 import { AREAS, PUBLIC_PAGES, SYSTEM_PAGES, stateRoute } from "@/lib/design-gallery";
 
-const linkClass = "underline decoration-control underline-offset-4 hover:decoration-foreground";
+const linkClass = "text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary";
 
 function Section({ title, rule, children }: { title: string; rule: string; children: React.ReactNode }) {
   return (
@@ -55,7 +55,8 @@ const SPACING: Array<[string, string, string]> = [
 const SWATCHES: Array<[string, string, string]> = [
   ["text-foreground", "Text, labels, headings", "bg-foreground"],
   ["text-muted-foreground", "Secondary text (4.5:1). Nothing lighter", "bg-muted-foreground"],
-  ["bg-primary", "The action colour: the one solid button", "bg-primary"],
+  ["bg-primary", "The action colour (the accent): the solid button, links, focus", "bg-primary"],
+  ["bg-background", "The page: warm cream, or near-black", "border bg-background"],
   ["border-control", "Edge of a field or outline button (3:1)", "border border-control"],
   ["border", "Divider; may be faint", "border"],
   ["bg-muted", "A quieter surface", "bg-muted"],
@@ -73,7 +74,10 @@ export default function DesignSystemPage() {
             Everything a SHIFTY screen is built from. If a screen needs something that is not here, add it to the system first, then use it.
           </p>
         </div>
-        <ThemeSetting />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <ThemeSetting />
+          <AccentSetting />
+        </div>
       </header>
 
       <Section title="Type" rule="Seven sizes, two weights, one typeface. Rank text with weight and colour before size; titles inside the app stay small.">
@@ -106,7 +110,7 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
-      <Section title="Colour" rule="Greys do the work. Colour means something every time it appears: a status or an error. The action colour is near-black; nothing is tinted for decoration.">
+      <Section title="Colour" rule="A warm cream page, white cards, violet-ink text. One action colour at a time, the accent (lilac unless changed), for what can be pressed or is selected. Other colour means a status or an error; nothing is tinted for decoration.">
         <div>
           {SWATCHES.map(([name, note, swatch]) => (
             <Row key={name} name={name} note={note}>

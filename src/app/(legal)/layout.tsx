@@ -6,14 +6,15 @@ import { LEGAL, LEGAL_LINKS } from "@/lib/legal";
 /*
  * Reading pages: text that is read, not scanned. One column at reading size (`text-prose`, 18/28)
  * and at most about 70 characters a line (`max-w-prose`), left-aligned, no box. Headings are small
- * and sit closer to the text below them than to the text above. Links inside the text are underlined.
+ * and sit closer to the text below them than to the text above. Links inside the text are underlined,
+ * in the action colour.
  */
 const proseClass = [
   "max-w-prose text-prose",
   "[&_h1]:mb-2 [&_h1]:text-heading [&_h1]:font-semibold [&_h1]:tracking-tight",
   "[&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-title [&_h2]:font-semibold",
   "[&_p]:mb-4 [&_ul]:mb-4 [&_ul]:grid [&_ul]:gap-2 [&_li]:ml-6 [&_li]:list-disc",
-  "[&_a]:underline [&_a]:decoration-control [&_a]:underline-offset-4 [&_a:hover]:decoration-foreground",
+  "[&_a]:text-primary [&_a]:underline [&_a]:decoration-primary/40 [&_a]:underline-offset-4 [&_a:hover]:decoration-primary",
   "[&_table]:mb-4 [&_table]:w-full [&_table]:text-body [&_td]:border-t [&_td]:py-2 [&_td]:pr-4 [&_td]:align-top",
   "[&_th]:pr-4 [&_th]:pb-2 [&_th]:text-left [&_th]:text-caption [&_th]:font-normal [&_th]:text-muted-foreground",
 ].join(" ");

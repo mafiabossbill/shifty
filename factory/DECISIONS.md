@@ -13,6 +13,18 @@ Consequences: <cost, follow-ups, how to revisit>
 ```
 
 ## Entries
+### D22 — SHIFTY keeps its own colours on the factory's structure (2026-11-15, Bill, after seeing lane R0; replaces R-D2 and R-D5, withdraws D13)
+Context: lane R0 (PR #11) installed the factory system with its neutral palette: white page, near-black action colour, blue-grey dark. Bill on seeing it: "you choked the spirit". It read as a generic grey-and-black app; SHIFTY was warm, lilac and playful.
+Decision: the structure stays as built (type scale, spacing, three elevations, flat surfaces, no glow or gradient, no boxes in boxes, no capital labels, readable secondary text, Mochi's colours). The colours are SHIFTY's again, as tokens in `globals.css`:
+- Light: a warm cream page (`#fbf8f1`), white cards, violet-ink text. Dark: SHIFTY's near-black (`#0c0a18`) with a faint violet tint that fades on lighter surfaces (chroma 0.03 or under; no purple wash).
+- One action colour, the accent: lilac by default (`#5b4ff5` light, `#8b7bff` dark), or indigo, teal, peach from Settings → Appearance. `<html data-accent>` sets `--primary` and `--primary-foreground`; nothing else changes with it. It is the solid button, links, the focus ring, the selected place in the menu, a switch that is on and the filled part of a bar.
+- The theme follows the device (System) unless the person picks Light or Dark, as it always did.
+- Contrast is computed in `tests/design.test.ts` for each accent in each theme: label on the button, the colour as text on the page, a card and a muted surface (4.5:1), the focus ring on every surface and the icon on the selected tint (3:1). In dark the action colour is a lighter shade under a dark label, because the original dark button colour (`#6d5dfc`) fails as link text (4.3:1).
+- Where the colour is not strong enough as text, it is not used as text: on the selected menu item the label stays `foreground` and the icon carries the colour (lilac on its own tint is 4.2:1).
+- Charts follow the standard's "one neutral and one accent": the accent is the action colour; time past a goal stays grey.
+Alternatives: keep near-black and tint only the logo (rejected by Bill); bring back the old tokens wholesale (`brand`, `brand-soft`, `glow`, `celebrate`: the glow and the decoration come back with them).
+Consequences: D13 is withdrawn: the Accent row stays and works. D12 (4) and D15 change in colour only: a switch that is on and the goal part of a bar are the accent. D16's ring is now the action colour. `--primary` replaces every use the old `brand` tokens had; the retired names stay retired. The R5 brief's line about the Accent row is the orchestrator's to update.
+
 ### D21 — The design test also checks markers, retired names and contrast (2026-11-13, ux-architect, lane R0)
 Context: Tailwind draws nothing for a class it does not know, so a leftover `bg-raised` or `type-hero` fails silently on screen; and "AA in both themes" was a claim in a comment, not a check.
 Decision: `tests/design.test.ts` adds three checks to the factory's: (1) an `awaiting redesign lane R<n>` marker names the lane that owns the file, and no foundation file carries one; (2) a file without that marker uses no retired name (the list is in the test and in `factory/handoffs/redesign-r0.md`); (3) text, field edges, the focus ring and status pills meet WCAG AA, computed from the tokens in `globals.css`.
@@ -61,7 +73,7 @@ Decision: `neutral` inactive · `info` in progress · `warning` waiting · `dang
 Alternatives: keep a violet tone for "active" (the brand colour would tint the interface, against R-D5).
 Consequences: rewards and achievements have no colour of their own outside Mochi's drawing; they are words, figures and the neutral pill.
 
-### D13 — The accent setting no longer colours anything (2026-11-13, ux-architect, lane R0; needs Bill's nod)
+### D13 — WITHDRAWN by D22 (2026-11-15) — The accent setting no longer colours anything (2026-11-13, ux-architect, lane R0)
 Context: R-D5 gives the interface one action colour, near-black. Appearance → Accent (lilac, indigo, teal, peach) existed to tint buttons, rings and navigation. R-D1 says every feature stays.
 Decision: the foundation follows R-D5: no token depends on the accent, and `<html data-accent>` is gone. The stored value, its setter and `AccentSetting` stay, so the saved setting is untouched and the Appearance screen keeps working. The screen plan for `/settings/appearance` takes the Accent row out (a control that changes nothing is a tell); the value stays in the saved settings.
 Alternatives: keep tinting (against R-D5); repaint Mochi with it (Mochi has her own palettes, R-D4); leave a dead control.

@@ -19,7 +19,7 @@ import { getBrowserClient } from "@/lib/supabase/client";
  * neighbouring pages are underlined text under the form.
  */
 
-const linkClass = "underline decoration-control underline-offset-4 hover:decoration-foreground";
+const linkClass = "text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary";
 /** Under a form: the one solid button first, then links. Phones: stacked, the button full width. */
 const actionsClass = "flex flex-wrap items-center gap-x-4 gap-y-3 max-md:flex-col max-md:items-stretch";
 const besideButtonClass = `${linkClass} max-md:flex max-md:min-h-11 max-md:items-center`;
@@ -64,7 +64,7 @@ export function LoginForm({ initialState }: { initialState?: FormState }) {
       </div>
       <p className="text-muted-foreground">
         New here?{" "}
-        <Link href="/signup" className={`${linkClass} text-foreground`}>
+        <Link href="/signup" className={linkClass}>
           Create account
         </Link>
       </p>

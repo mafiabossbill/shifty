@@ -19,8 +19,8 @@ import {
 
 /*
  * Appearance for this tab. The inline script in the root layout already set
- * <html class="dark" data-motion="…"> before first paint; this keeps them in sync when a
- * choice changes here, in another tab, or (for System) on the device.
+ * <html class="dark" data-accent="…" data-motion="…"> before first paint; this keeps them in
+ * sync when a choice changes here, in another tab, or (for System) on the device.
  */
 
 const APPEARANCE_EVENT = "app:theme";
@@ -104,7 +104,7 @@ export interface ThemeContextValue {
   theme: Theme;
   resolvedTheme: ResolvedTheme;
   setTheme: (theme: Theme) => void;
-  /** Stored only: the interface has one action colour (R-D5), so no colour follows this. */
+  /** The one action colour (`--primary`), picked with <html data-accent>. */
   accent: Accent;
   setAccent: (accent: Accent) => void;
   /** The stored choice ("system" follows the device). */
@@ -139,6 +139,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     applyTheme(resolvedTheme);
   }, [resolvedTheme]);
+
+  React.useEffect(() => {
+    document.documentElement.setAttribute("data-accent", accent);
+  }, [accent]);
 
   React.useEffect(() => {
     const root = document.documentElement;

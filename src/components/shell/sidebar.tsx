@@ -10,8 +10,11 @@ import { MAIN_NAV, isActivePath } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 const itemClass = "flex h-8 items-center gap-2 rounded-md px-2 text-sidebar-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground";
-/** The current place is marked twice: a quieter surface and a heavier, darker label. */
-const activeClass = "bg-sidebar-accent font-semibold text-foreground";
+/**
+ * The current place is marked three ways: a tint of the action colour, the icon in that colour and
+ * a heavier label. The label itself stays `foreground`: accent text on its own tint is under 4.5:1.
+ */
+const activeClass = "bg-primary/10 font-semibold text-foreground hover:bg-primary/10 dark:bg-primary/15 dark:hover:bg-primary/15";
 
 /** From 1024px: the logo, the five places, quiet legal links. */
 export function Sidebar() {
@@ -32,7 +35,7 @@ export function SidebarFrame({ pathname = null }: { pathname?: string | null }) 
           const active = isActivePath(pathname, item.href);
           return (
             <Link key={item.href} href={item.href} aria-current={active ? "page" : undefined} className={cn(itemClass, active && activeClass)}>
-              <NavIcon icon={item.icon} className={cn("size-4", !active && "text-muted-foreground")} />
+              <NavIcon icon={item.icon} className={cn("size-4", active ? "text-primary" : "text-muted-foreground")} />
               {item.label}
             </Link>
           );

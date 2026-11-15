@@ -11,7 +11,7 @@ export const APP_CONFIG = {
   name: "SHIFTY",
   shortName: "SHIFTY",
   description: "A personal, session-first work tracker: clock in, track shifts across midnight, see beautiful reports, and grow a cozy companion.",
-  /** The brand colour: the logo's. It does not tint the interface (the action colour is `--primary`). */
+  /** The brand colour: lilac. The interface's action colour is the accent (`--primary` in globals.css), lilac by default. */
   // design-ok: the brand colour as data for bootstrap and icon scripts; no screen reads it
   brandColor: "#6d5dfc",
   /** IANA zone that decides what "today" means for dates. Overridden by APP_TIMEZONE. */

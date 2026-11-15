@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { checkDesign, formatReport } from "../scripts/design-check";
 import { PUBLIC_PAGES, SCREENS, SYSTEM_PAGES, galleryRoutes, photographedRoutes } from "@/lib/design-gallery";
+import { ACCENTS, DEFAULT_ACCENT, type Accent } from "@/lib/theme";
 import { ELEVATIONS, TYPE_SCALE, cn } from "@/lib/utils";
 
 const ROOT = process.cwd();
@@ -145,30 +146,37 @@ describe("redesign markers", () => {
 
 /* ---- Contrast (WCAG 2.1 AA), computed from the tokens themselves ---- */
 
-/** Relative luminance of `oklch(L C H)` or `#rrggbb`. */
-function luminance(color: string): number {
+type Rgb = [number, number, number];
+
+/** Linear-light sRGB of `#rrggbb` or `oklch(L C H)`. */
+function linearRgb(color: string): Rgb {
   const channel = (c: number) => Math.min(1, Math.max(0, c));
   const hex = /^#([0-9a-f]{6})$/i.exec(color.trim());
-  if (hex) {
-    const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex[1].slice(i, i + 2), 16) / 255).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-  }
+  if (hex) return [0, 2, 4].map((i) => parseInt(hex[1].slice(i, i + 2), 16) / 255).map((v) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)) as Rgb;
   // Tailwind writes lightness as a percentage and a grey's hue as "none".
-  const ok = /^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+|none)/.exec(color.trim());
+  const ok = /^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+|none)\s*\)$/.exec(color.trim());
   if (!ok) throw new Error(`Cannot read the colour "${color}"`);
   const [L, C, H] = [ok[2] ? Number(ok[1]) / 100 : Number(ok[1]), Number(ok[3]), ok[4] === "none" ? 0 : (Number(ok[4]) * Math.PI) / 180];
   const [a, b] = [C * Math.cos(H), C * Math.sin(H)];
   const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
   const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
   const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
-  const red = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
-  const green = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
-  const blue = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
-  return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue);
+  return [channel(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s), channel(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s), channel(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s)];
 }
 
-function contrast(one: string, other: string): number {
-  const [hi, lo] = [luminance(one), luminance(other)].sort((x, y) => y - x);
+const luminance = ([r, g, b]: Rgb) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+/** `fg` at `alpha` over `bg`, the way a browser paints `bg-primary/10`: blended in gamma-encoded sRGB. */
+function over(fg: string, bg: string, alpha: number): Rgb {
+  const encode = (v: number) => (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
+  const decode = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  const [f, b] = [linearRgb(fg).map(encode), linearRgb(bg).map(encode)];
+  return f.map((v, i) => decode(v * alpha + b[i] * (1 - alpha))) as Rgb;
+}
+
+function contrast(one: string | Rgb, other: string | Rgb): number {
+  const of = (c: string | Rgb) => luminance(typeof c === "string" ? linearRgb(c) : c);
+  const [hi, lo] = [of(one), of(other)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 }
 
@@ -187,6 +195,8 @@ describe("contrast", () => {
     light: { ...tokens(css, ":root {"), phoneMuted: tokens(css, ":root {", phone)["muted-foreground"] },
     dark: { ...tokens(css, ".dark {"), phoneMuted: tokens(css, ".dark {", phone)["muted-foreground"] },
   };
+  /** The action colour and its label, per theme and accent, as globals.css declares them. */
+  const accentTokens = (theme: "light" | "dark", accent: Accent) => tokens(css, theme === "light" ? `[data-accent="${accent}"] {` : `.dark [data-accent="${accent}"] {`);
   const WHITE = "#ffffff";
 
   it("finds the phone step-up of the tokens", () => {
@@ -194,7 +204,7 @@ describe("contrast", () => {
     expect(themes.light.phoneMuted).not.toBe(themes.light["muted-foreground"]);
   });
 
-  it.each(Object.entries(themes))("%s: text, field edges and the focus ring meet AA", (_name, t) => {
+  it.each(Object.entries(themes))("%s: text and field edges meet AA", (_name, t) => {
     expect(contrast(t.foreground, t.background)).toBeGreaterThanOrEqual(7);
     expect(contrast(t["card-foreground"], t.card)).toBeGreaterThanOrEqual(7);
     for (const surface of [t.background, t.card, t.muted, t.accent]) {
@@ -202,21 +212,54 @@ describe("contrast", () => {
       expect(contrast(t.phoneMuted, surface)).toBeGreaterThanOrEqual(4.5);
     }
     expect(contrast(t["sidebar-foreground"], t.sidebar)).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(t["primary-foreground"], t.primary)).toBeGreaterThanOrEqual(4.5);
     expect(contrast(WHITE, t["destructive-strong"])).toBeGreaterThanOrEqual(4.5);
-    // Edges that carry meaning (a field, a switch that is off) and the focus ring: 3:1 against the surface.
+    // Edges that carry meaning (a field, a switch that is off, an invalid field): 3:1 against the surface.
     for (const surface of [t.background, t.card]) {
       expect(contrast(t.control, surface)).toBeGreaterThanOrEqual(3);
-      expect(contrast(t.ring, surface)).toBeGreaterThanOrEqual(3);
       expect(contrast(t.destructive, surface)).toBeGreaterThanOrEqual(3);
+      // The darker neutrals may be used as text.
+      for (const step of ["500", "600", "700"]) expect(contrast(t[`color-neutral-${step}`], surface), `neutral-${step}`).toBeGreaterThanOrEqual(4.5);
     }
+  });
+
+  it("the default action colour is lilac in both themes", () => {
+    expect(DEFAULT_ACCENT).toBe("lilac");
+    for (const theme of ["light", "dark"] as const) {
+      expect(themes[theme].primary).toBe(accentTokens(theme, "lilac").primary);
+      expect(themes[theme]["primary-foreground"]).toBe(accentTokens(theme, "lilac")["primary-foreground"]);
+    }
+    expect(themes.light.ring).toBe("var(--primary)");
+  });
+
+  const cases = (["light", "dark"] as const).flatMap((theme) => ACCENTS.map((accent) => [theme, accent] as const));
+  it.each(cases)("%s %s: the action colour meets AA as a button, a link, the focus ring and the selected place", (theme, accent) => {
+    const t = themes[theme];
+    const { primary, "primary-foreground": label } = accentTokens(theme, accent);
+    // The solid button, a switch that is on: the label on the fill.
+    expect(contrast(label, primary), "label on the button").toBeGreaterThanOrEqual(4.5);
+    // Links and the current tab of the bottom bar: the colour as text.
+    for (const surface of ["background", "card", "popover", "muted"] as const) {
+      expect(contrast(primary, t[surface]), `as text on ${surface}`).toBeGreaterThanOrEqual(4.5);
+    }
+    // The focus ring, on every surface a control can sit on.
+    for (const surface of ["background", "card", "popover", "muted", "accent", "sidebar"] as const) {
+      expect(contrast(primary, t[surface]), `focus ring on ${surface}`).toBeGreaterThanOrEqual(3);
+    }
+    // The selected place in the sidebar: a tint of the colour, the icon in the colour, the label in `foreground`.
+    const tint = over(primary, t.sidebar, theme === "light" ? 0.1 : 0.15);
+    expect(contrast(primary, tint), "icon on the selected tint").toBeGreaterThanOrEqual(3);
+    expect(contrast(t.foreground, tint), "label on the selected tint").toBeGreaterThanOrEqual(7);
+    // The filled part of a bar against its track.
+    expect(contrast(primary, t["color-neutral-200"]), "bar on its track").toBeGreaterThanOrEqual(3);
   });
 
   it("status pills: ink on its tint meets AA in both themes", () => {
     const palette = tailwindColors as unknown as Record<string, Record<string, string>>;
-    const dark = themes.dark;
+    const { light, dark } = themes;
+    // The neutral scale is SHIFTY's own in both themes; the status scales are Tailwind's in light.
+    expect(contrast(light["color-neutral-600"], light["color-neutral-100"]), "neutral light").toBeGreaterThanOrEqual(4.5);
+    expect(contrast(dark["color-neutral-600"], dark["color-neutral-100"]), "neutral dark").toBeGreaterThanOrEqual(4.5);
     const pairs: Array<[string, string, string]> = [
-      ["neutral", "600", "100"],
       ["blue", "700", "50"],
       ["amber", "800", "50"],
       ["red", "700", "50"],

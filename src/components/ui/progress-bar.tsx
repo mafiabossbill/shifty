@@ -30,8 +30,9 @@ export function barGeometry({ value, overage = 0 }: { value: number; overage?: n
 
 /**
  * Progress toward a goal as a plain bar (Home's goal, a session's recap). It answers one question:
- * how much of the goal is done, and how far past it. Greys only: more hours is not better or worse,
- * so neither part takes a status colour. Put the figures in words next to it ("9h 12m of 16h").
+ * how much of the goal is done, and how far past it. The goal part is the accent (a chart has one
+ * neutral and one accent); the part past the goal is grey: more hours is not better or worse, so
+ * it never takes a status colour. Put the figures in words next to it ("9h 12m of 16h").
  * Replaces the goal ring (design standard §13: no rings or gauges).
  */
 export function ProgressBar({ value, overage = 0, label, valueText, className }: ProgressBarProps) {
@@ -47,8 +48,8 @@ export function ProgressBar({ value, overage = 0, label, valueText, className }:
       aria-valuetext={valueText}
       className={cn("flex h-2 w-full gap-0.5 overflow-hidden rounded-full bg-neutral-200", className)}
     >
-      <div className={cn(part, "bg-neutral-800")} style={{ width: `${g.goalPercent}%` }} />
-      {g.over > 0 ? <div className={cn(part, "bg-neutral-500")} style={{ width: `${g.overPercent}%` }} /> : null}
+      <div className={cn(part, "bg-primary")} style={{ width: `${g.goalPercent}%` }} />
+      {g.over > 0 ? <div className={cn(part, "bg-neutral-400")} style={{ width: `${g.overPercent}%` }} /> : null}
     </div>
   );
 }
