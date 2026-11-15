@@ -1,6 +1,7 @@
 "use client";
 
-import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { CheckIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
+import { RadioGroup } from "radix-ui";
 
 import { useTheme } from "@/components/theme/theme-provider";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -33,25 +34,41 @@ export function ThemeSetting({ onChange }: { onChange?: (theme: Theme) => void }
   );
 }
 
-const ACCENT_OPTIONS = ACCENTS.map((value) => ({ value, label: ACCENT_LABELS[value] }));
-
 /**
- * Retired by R-D5: the interface has one action colour, so this choice no longer changes anything
- * on screen. It still stores the value, so the Appearance screen keeps working until its lane (R5)
- * takes the row out. Do not add it to a new screen.
+ * The action colour: lilac, indigo, teal or peach. One at a time; choosing recolours the solid
+ * button, links, the focus ring and the selected place in the menu at once. Each swatch carries
+ * its own `data-accent`, so it shows its colour in the current theme straight from globals.css.
+ * The choice is marked twice: a check in the swatch and a darker, heavier name.
  */
 export function AccentSetting({ onChange }: { onChange?: (accent: Accent) => void }) {
   const { accent, setAccent } = useTheme();
   return (
-    <SegmentedControl
-      ariaLabel="Accent"
+    <RadioGroup.Root
+      aria-label="Accent colour"
       value={accent}
-      options={ACCENT_OPTIONS}
       onValueChange={(next) => {
-        setAccent(next);
-        onChange?.(next);
+        const value = next as Accent;
+        setAccent(value);
+        onChange?.(value);
       }}
-    />
+      orientation="horizontal"
+      loop
+      className="flex flex-wrap gap-2"
+    >
+      {ACCENTS.map((value) => (
+        <RadioGroup.Item
+          key={value}
+          value={value}
+          data-touch-target
+          className="group flex h-8 cursor-pointer items-center gap-2 rounded-md border border-control bg-card pr-3 pl-2 text-muted-foreground shadow-raised transition-colors hover:text-foreground data-[state=checked]:font-semibold data-[state=checked]:text-foreground max-md:h-10 dark:bg-input/30"
+        >
+          <span data-accent={value} className="flex size-4 items-center justify-center rounded-full bg-primary text-primary-foreground">
+            <CheckIcon className="size-3 opacity-0 group-data-[state=checked]:opacity-100" strokeWidth={3} aria-hidden />
+          </span>
+          {ACCENT_LABELS[value]}
+        </RadioGroup.Item>
+      ))}
+    </RadioGroup.Root>
   );
 }
 

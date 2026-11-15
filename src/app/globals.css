@@ -22,113 +22,151 @@
 
 /*
  * SHIFTY's design system (docs/factory/docs/UI_UX_STANDARD.md; visible at /design in development).
- * Neutral palette; colour is reserved for meaning. Two themes:
- *   :root  light (default)
- *   .dark  dark (Settings → Appearance, or the device when set to System)
- * Every colour in the app comes from these tokens. Components use the semantic tokens
- * (background, muted, border, control…) or the neutral and status scales, never raw hex.
+ * The structure is the factory's; the colours are SHIFTY's own (factory/DECISIONS.md D22):
+ *   :root  light: a warm cream page, white cards, violet-ink text
+ *   .dark  dark: a near-black with a faint violet tint (Settings → Appearance; System follows the device)
+ *   <html data-accent="lilac|indigo|teal|peach">  the one action colour (lilac by default)
+ * Surfaces are flat: no gradient, no glow. Every colour in the app comes from these tokens.
+ * Components use the semantic tokens or the neutral and status scales, never raw hex.
  *
  *   foreground         text, labels, headings (≥ 7:1)
  *   muted-foreground   secondary text; the lightest text there is (≥ 4.5:1)
- *   primary            THE action colour: the one solid button, a switch that is on. Near-black, never a hue (R-D5)
+ *   primary            THE action colour, set by the accent: the one solid button, links, the focus ring,
+ *                      the selected place in the menu, a switch that is on, the filled part of a bar.
+ *                      One at a time. As text it holds 4.5:1 on the page, a card and a muted surface;
+ *                      primary-foreground is its label (≥ 4.5:1). Not for text on a hover or a tinted
+ *                      surface: there the label stays `foreground` and only the icon takes the colour
  *   control            edge of a field, checkbox, switch or outline button: a border that carries meaning (≥ 3:1)
  *   border             dividers and outlines that only decorate
- *   muted, accent      a quieter surface, a hover
- *   background, card   page and raised surfaces
+ *   muted, accent      a quieter surface, a hover (`accent` is the neutral hover, not the accent colour)
+ *   background, card   the page (cream) and what sits on it (white)
  *   destructive        invalid field edge; destructive-strong is the fill of the red confirm button
- *   neutral, blue, amber, red, emerald, violet   scales; status = dark ink (700+) on a light tint (50)
+ *   neutral            warm at the light end (surfaces, tracks), violet ink at the dark end (text)
+ *   blue, amber, red, emerald, violet   status scales: dark ink (700+) on a light tint (50)
  *   logo-*             the logo mark's own colours (brand-mark.tsx). Nothing else uses them
+ * Contrast is computed from these values in tests/design.test.ts, for every accent in both themes.
  */
 :root {
   --radius: 0.5rem;
   /* Height of the phone bottom bar (components/shell/bottom-nav.tsx); 0 where the sidebar shows. */
   --bottom-nav-height: 0px;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.205 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.205 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.205 0 0);
-  --primary: oklch(0.235 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.235 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.54 0 0);
-  --accent: oklch(0.965 0 0);
-  --accent-foreground: oklch(0.235 0 0);
-  --destructive: oklch(0.577 0.2 27.3);
+  --background: #fbf8f1; /* = THEME_COLORS.light (src/lib/theme.ts) */
+  --foreground: #1d1a2e;
+  --card: #ffffff;
+  --card-foreground: #1d1a2e;
+  --popover: #ffffff;
+  --popover-foreground: #1d1a2e;
+  /* Lilac, the default accent. The other accents override these two below. */
+  --primary: #5b4ff5;
+  --primary-foreground: #ffffff;
+  --secondary: #f4efe4;
+  --secondary-foreground: #1d1a2e;
+  --muted: #f4efe4;
+  --muted-foreground: #6b6580;
+  --accent: #efe8da;
+  --accent-foreground: #1d1a2e;
+  --destructive: #c4384c;
   /* Fill behind white text (the red confirm button): dark enough for AA in both themes. */
-  --destructive-strong: oklch(0.577 0.2 27.3);
-  --border: oklch(0.925 0 0);
-  --input: oklch(0.905 0 0);
-  /* Edge of a field, checkbox, switch or outline button: at least 3:1 against the surface. */
-  --control: oklch(0.64 0 0);
-  /* The focus ring (see :focus-visible below): at least 3:1 against every surface. */
-  --ring: oklch(0.45 0 0);
-  --sidebar: oklch(0.985 0.001 106);
-  --sidebar-foreground: oklch(0.32 0 0);
-  --sidebar-accent: oklch(0.945 0.001 106);
-  --sidebar-border: oklch(0.935 0.001 106);
+  --destructive-strong: #c4384c;
+  --border: #e9e2d3;
+  --input: #ddd4c2;
+  /* Edge of a field, checkbox, switch or outline button: at least 3:1 against the page and a card. */
+  --control: #8a8272;
+  /* The focus ring (see :focus-visible below) is the action colour. */
+  --ring: var(--primary);
+  --sidebar: #f7f2e7;
+  --sidebar-foreground: #3b3650;
+  --sidebar-accent: #efe8da;
+  --sidebar-border: #e9e2d3;
   /* Dimmed backdrop behind dialogs and sheets. */
-  --overlay: oklch(0 0 0 / 0.25);
-  --overlay-subtle: oklch(0 0 0 / 0.05);
+  --overlay: rgb(29 26 46 / 0.32);
+  --overlay-subtle: rgb(29 26 46 / 0.08);
   /* The logo mark: an ink tile, a violet arc, a warm dot. The same art as the app icon. */
   --logo-ink: #14112a;
   --logo-ring: #302e44;
   --logo-arc: #8b7bff;
   --logo-dot: #ffae5a;
+
+  /* Neutral scale, light: cream to warm grey for surfaces and tracks (50–500), violet ink for text (600+). */
+  --color-neutral-50: #f8f4ea;
+  --color-neutral-100: #f4efe4;
+  --color-neutral-200: #e9e2d3;
+  --color-neutral-300: #d9d0bd;
+  --color-neutral-400: #a9a091;
+  --color-neutral-500: #736c62;
+  --color-neutral-600: #6b6580;
+  --color-neutral-700: #4b4660;
+  --color-neutral-800: #332e4a;
+  --color-neutral-900: #1d1a2e;
+  --color-neutral-950: #14112a;
+}
+
+/* The other accents, light. Each holds 4.5:1 under a white label and as text on the page, a card and a muted surface. */
+[data-accent="lilac"] {
+  --primary: #5b4ff5;
+  --primary-foreground: #ffffff;
+}
+[data-accent="indigo"] {
+  --primary: #4552e0;
+  --primary-foreground: #ffffff;
+}
+[data-accent="teal"] {
+  --primary: #0f766b;
+  --primary-foreground: #ffffff;
+}
+[data-accent="peach"] {
+  --primary: #b8491f;
+  --primary-foreground: #ffffff;
 }
 
 /*
- * Dark: a near-black ink (#0C0E15, also the splash and status-bar colour) with a cool,
- * low-chroma neutral ramp. Contrast is checked for AA (tests/design.test.ts): body text ≥ 13:1,
- * muted text ≥ 6:1 on background and on muted surfaces, status ink ≥ 6:1 on its pill.
+ * Dark: SHIFTY's near-black (#0C0A18, also the splash and status-bar colour) with a faint violet
+ * tint that fades as surfaces get lighter. No purple wash: chroma stays at 0.03 or under on every
+ * surface. The action colour is a lighter shade of the accent, under a dark label.
  */
 .dark {
-  --background: #0c0e15; /* = THEME_COLORS.dark (src/lib/theme.ts) */
-  --foreground: oklch(0.94 0.004 275);
-  --card: oklch(0.2 0.012 275);
-  --card-foreground: oklch(0.94 0.004 275);
-  --popover: oklch(0.215 0.012 275);
-  --popover-foreground: oklch(0.94 0.004 275);
-  --primary: oklch(0.93 0.004 275);
-  --primary-foreground: oklch(0.2 0.012 275);
-  --secondary: oklch(0.26 0.01 275);
-  --secondary-foreground: oklch(0.93 0.004 275);
-  --muted: oklch(0.235 0.01 275);
-  --muted-foreground: oklch(0.71 0.01 275);
-  --accent: oklch(0.255 0.01 275);
-  --accent-foreground: oklch(0.94 0.004 275);
+  --background: #0c0a18; /* = THEME_COLORS.dark (src/lib/theme.ts) */
+  --foreground: #f4f1ff;
+  --card: oklch(0.2 0.02 290);
+  --card-foreground: #f4f1ff;
+  --popover: oklch(0.215 0.02 290);
+  --popover-foreground: #f4f1ff;
+  --primary: #8b7bff;
+  --primary-foreground: #14112a;
+  --secondary: oklch(0.26 0.02 290);
+  --secondary-foreground: #f4f1ff;
+  --muted: oklch(0.235 0.02 290);
+  --muted-foreground: #a59fc4;
+  --accent: oklch(0.26 0.022 290);
+  --accent-foreground: #f4f1ff;
   --destructive: oklch(0.68 0.19 25);
   --destructive-strong: oklch(0.54 0.19 25);
-  --border: oklch(0.275 0.01 275);
-  --input: oklch(0.32 0.01 275);
-  --control: oklch(0.54 0.01 275);
-  --ring: oklch(0.78 0.008 275);
-  --sidebar: oklch(0.155 0.012 275);
-  --sidebar-foreground: oklch(0.8 0.006 275);
-  --sidebar-accent: oklch(0.245 0.01 275);
-  --sidebar-border: oklch(0.245 0.01 275);
-  --overlay: oklch(0 0 0 / 0.55);
-  --overlay-subtle: oklch(0 0 0 / 0.4);
+  --border: oklch(0.28 0.02 290);
+  --input: oklch(0.33 0.02 290);
+  --control: oklch(0.56 0.03 290);
+  --sidebar: oklch(0.175 0.025 290);
+  --sidebar-foreground: oklch(0.82 0.02 290);
+  --sidebar-accent: oklch(0.245 0.02 290);
+  --sidebar-border: oklch(0.245 0.02 290);
+  --overlay: oklch(0.1 0.02 290 / 0.6);
+  --overlay-subtle: oklch(0.1 0.02 290 / 0.4);
 
   /*
    * Scales flip in dark, Radix-style: step 50 is always the faintest tint of a
    * surface and 700–900 the strongest ink, so `bg-red-50 text-red-700` (a status
    * pill) or `border-neutral-100` (a row divider) reads right in both themes.
    */
-  --color-neutral-50: oklch(0.205 0.01 275);
-  --color-neutral-100: oklch(0.235 0.01 275);
-  --color-neutral-200: oklch(0.29 0.01 275);
-  --color-neutral-300: oklch(0.37 0.01 275);
-  --color-neutral-400: oklch(0.5 0.01 275);
-  --color-neutral-500: oklch(0.63 0.01 275);
-  --color-neutral-600: oklch(0.73 0.008 275);
-  --color-neutral-700: oklch(0.81 0.006 275);
-  --color-neutral-800: oklch(0.88 0.005 275);
-  --color-neutral-900: oklch(0.93 0.004 275);
-  --color-neutral-950: oklch(0.96 0.003 275);
+  --color-neutral-50: oklch(0.205 0.02 290);
+  --color-neutral-100: oklch(0.235 0.02 290);
+  --color-neutral-200: oklch(0.29 0.022 290);
+  --color-neutral-300: oklch(0.37 0.025 290);
+  --color-neutral-400: oklch(0.5 0.025 290);
+  --color-neutral-500: oklch(0.63 0.025 290);
+  --color-neutral-600: oklch(0.74 0.03 290);
+  --color-neutral-700: oklch(0.82 0.02 290);
+  --color-neutral-800: oklch(0.88 0.015 290);
+  --color-neutral-900: oklch(0.93 0.012 290);
+  --color-neutral-950: oklch(0.96 0.01 290);
 
   --color-red-50: oklch(0.25 0.05 22);
   --color-red-100: oklch(0.29 0.07 22);
@@ -184,6 +222,31 @@
   --color-violet-700: oklch(0.8 0.11 293);
   --color-violet-800: oklch(0.86 0.08 293);
   --color-violet-900: oklch(0.91 0.05 293);
+}
+
+/*
+ * The accents, dark: a lighter shade of each, under a dark label of its own hue. The second
+ * selector lets an element inside the page carry its own accent (the swatches in Appearance).
+ */
+.dark[data-accent="lilac"],
+.dark [data-accent="lilac"] {
+  --primary: #8b7bff;
+  --primary-foreground: #14112a;
+}
+.dark[data-accent="indigo"],
+.dark [data-accent="indigo"] {
+  --primary: #7d8bff;
+  --primary-foreground: #10122e;
+}
+.dark[data-accent="teal"],
+.dark [data-accent="teal"] {
+  --primary: #3cc8b4;
+  --primary-foreground: #06201c;
+}
+.dark[data-accent="peach"],
+.dark [data-accent="peach"] {
+  --primary: #ff9f80;
+  --primary-foreground: #2a1208;
 }
 
 /* The bottom bar shows below 1024px (phones and tablets); from there the sidebar takes over. */
@@ -265,9 +328,9 @@
    *   modal    takes over the screen (dialog, sheet)
    */
   --shadow-*: initial;
-  --shadow-raised: 0 1px 2px oklch(0.2 0.02 275 / 0.07);
-  --shadow-overlay: 0 6px 16px -4px oklch(0.2 0.02 275 / 0.14), 0 2px 4px -2px oklch(0.2 0.02 275 / 0.1);
-  --shadow-modal: 0 24px 48px -12px oklch(0.2 0.02 275 / 0.24), 0 4px 8px -4px oklch(0.2 0.02 275 / 0.06);
+  --shadow-raised: 0 1px 2px oklch(0.2 0.03 290 / 0.07);
+  --shadow-overlay: 0 6px 16px -4px oklch(0.2 0.03 290 / 0.14), 0 2px 4px -2px oklch(0.2 0.03 290 / 0.1);
+  --shadow-modal: 0 24px 48px -12px oklch(0.2 0.03 290 / 0.24), 0 4px 8px -4px oklch(0.2 0.03 290 / 0.06);
 
   /*
    * One corner policy: sm (4) small marks and pills · md (6) controls · lg (8) boxes ·
@@ -367,10 +430,10 @@
     --text-body--line-height: 1.5rem;
     --text-title: 1.125rem;
     --text-title--line-height: 1.625rem;
-    --muted-foreground: oklch(0.47 0 0);
+    --muted-foreground: #625c77;
   }
   .dark {
-    --muted-foreground: oklch(0.76 0.01 275);
+    --muted-foreground: oklch(0.76 0.04 290);
   }
 }
 
@@ -427,5 +490,6 @@
     --foreground: oklch(0 0 0);
     --muted-foreground: oklch(0.4 0 0);
     --border: oklch(0.8 0 0);
+    --primary: oklch(0.25 0 0);
   }
 }

@@ -74,7 +74,7 @@ export function ProgressRing({ value, overage = 0, label, valueText, size = 232,
       <svg viewBox={`0 0 ${size} ${size}`} className="absolute inset-0 size-full -rotate-90 overflow-visible" aria-hidden>
         <circle cx={center} cy={center} r={radius} className="fill-none stroke-neutral-200" strokeWidth={stroke} />
         {v > 0 ? (
-          <circle cx={center} cy={center} r={radius} strokeWidth={stroke} strokeDasharray={circumference} strokeDashoffset={g.offset} className={cn(arcClass, "stroke-neutral-800")} />
+          <circle cx={center} cy={center} r={radius} strokeWidth={stroke} strokeDasharray={circumference} strokeDashoffset={g.offset} className={cn(arcClass, "stroke-primary")} />
         ) : null}
         {o > 0 ? (
           <circle
@@ -84,7 +84,7 @@ export function ProgressRing({ value, overage = 0, label, valueText, size = 232,
             strokeWidth={innerStroke}
             strokeDasharray={innerCircumference}
             strokeDashoffset={g.innerOffset}
-            className={cn(arcClass, "stroke-neutral-500")}
+            className={cn(arcClass, "stroke-neutral-400")}
           />
         ) : null}
       </svg>

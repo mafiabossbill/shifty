@@ -4,7 +4,7 @@ import { barGeometry } from "@/components/ui/progress-bar";
 import { ringGeometry } from "@/components/ui/progress-ring";
 import { SESSION_STATUS, SYNC_STATE, TONES } from "@/components/ui/status-pill";
 import { MAIN_NAV, titleFor } from "@/lib/nav";
-import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/lib/theme";
+import { ACCENTS, DEFAULT_ACCENT, THEME_COLORS, THEME_INIT_SCRIPT } from "@/lib/theme";
 
 describe("ProgressBar geometry", () => {
   it("fills toward the goal and never goes negative or past the end", () => {
@@ -67,11 +67,18 @@ describe("navigation", () => {
 });
 
 describe("appearance", () => {
-  it("paints the app background as the browser colour and applies theme and motion before first paint", () => {
-    expect(THEME_COLORS).toEqual({ light: "#ffffff", dark: "#0c0e15" });
-    expect(THEME_INIT_SCRIPT).toContain("data-motion");
+  it("paints the app background as the browser colour: cream in light, SHIFTY's near-black in dark", () => {
+    expect(THEME_COLORS).toEqual({ light: "#fbf8f1", dark: "#0c0a18" });
+    expect(THEME_INIT_SCRIPT).toContain(THEME_COLORS.light);
     expect(THEME_INIT_SCRIPT).toContain(THEME_COLORS.dark);
-    // One action colour (R-D5): no accent reaches the page.
-    expect(THEME_INIT_SCRIPT).not.toContain("data-accent");
+  });
+
+  it("applies theme, accent and motion before first paint, and follows the device when nothing is chosen", () => {
+    expect(THEME_INIT_SCRIPT).toContain("data-accent");
+    expect(THEME_INIT_SCRIPT).toContain("data-motion");
+    for (const accent of ACCENTS) expect(THEME_INIT_SCRIPT).toContain(accent);
+    expect(DEFAULT_ACCENT).toBe("lilac");
+    // No stored theme (or "system"): the script asks the device, it does not force light.
+    expect(THEME_INIT_SCRIPT).toContain('if(t!=="light"&&t!=="dark")t=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"');
   });
 });

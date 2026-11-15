@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 
 /*
  * Buttons are styled by rank, not by meaning (design standard §8). Every action is a real <Button>.
- *   default      primary: solid. The one action this screen or dialog exists for. At most one per screen.
+ *   default      primary: solid, in the action colour (the accent). The one action this screen or dialog exists for.
+ *                At most one per screen.
  *   outline      secondary: same shape, an edge instead of a fill. Everything else worth a button.
- *   link         tertiary: underlined text. Low-stakes actions (Cancel, Clear filters).
+ *   link         tertiary: underlined text in the action colour. Low-stakes actions (Cancel, Clear filters).
  *   ghost        no edge at rest: icon-only buttons and actions inside a row, menu or toolbar.
  *   destructive  red fill, and only as the confirm button inside useConfirm(). Before that step a
  *                delete is an ordinary outline or link button, labelled with what it deletes.
@@ -26,9 +27,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground shadow-raised hover:bg-primary/90 active:bg-primary/80",
         destructive: "bg-destructive-strong text-white shadow-raised hover:bg-destructive-strong/90 active:bg-destructive-strong/80",
-        outline: "border border-control bg-background shadow-raised hover:bg-accent hover:text-accent-foreground active:bg-accent dark:bg-input/30 dark:hover:bg-accent",
+        outline: "border border-control bg-card shadow-raised hover:bg-accent hover:text-accent-foreground active:bg-accent dark:bg-input/30 dark:hover:bg-accent",
         ghost: "font-normal hover:bg-accent hover:text-accent-foreground active:bg-accent",
-        link: "text-foreground underline decoration-control underline-offset-4 hover:decoration-foreground",
+        link: "text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary",
       },
       // Phones get a step up; on any touch screen the hit area is at least 44px (globals.css).
       size: {

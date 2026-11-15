@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 /**
  * The SHIFTY mark: an ink tile with a violet goal arc and a warm dot where the shift ends.
  * Same art as the app icon (public/icons). Its colours are the logo's own (`logo-*` in globals.css):
- * the one place violet appears outside Mochi. Decorative next to the wordmark.
+ * they do not follow the accent. Decorative next to the wordmark.
  */
 export function BrandMark({ className, title }: { className?: string; title?: string }) {
   return (

@@ -35,13 +35,13 @@ function Slider({
       {...props}
     >
       <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-neutral-200">
-        <SliderPrimitive.Range className="absolute h-full rounded-full bg-neutral-800" />
+        <SliderPrimitive.Range className="absolute h-full rounded-full bg-primary" />
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb
         aria-label={ariaLabel}
         aria-valuetext={valueText}
         data-touch-target
-        className="block size-5 cursor-grab rounded-full border border-control bg-background shadow-raised active:cursor-grabbing dark:bg-neutral-900"
+        className="block size-5 cursor-grab rounded-full border border-control bg-card shadow-raised active:cursor-grabbing dark:bg-neutral-900"
       />
     </SliderPrimitive.Root>
   );

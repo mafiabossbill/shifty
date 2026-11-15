@@ -7,11 +7,12 @@ const PICKER_TYPES = new Set(["date", "time", "datetime-local", "month", "week"]
 
 /**
  * Shared field look: Input, Textarea and Select. 32px tall, 40px on phones (16px text there, so iOS
- * never zooms). The edge is `border-control`: a field's border carries meaning, so it holds 3:1.
+ * never zooms). White on the cream page, so a field reads as a place to type. The edge is
+ * `border-control`: a field's border carries meaning, so it holds 3:1.
  * Focus is the global ring (globals.css); an invalid field turns its edge red and says why above it (Field).
  */
 export const fieldClass = cn(
-  "w-full min-w-0 rounded-md border border-control bg-transparent px-3 text-body text-foreground shadow-raised transition-colors dark:bg-input/30",
+  "w-full min-w-0 rounded-md border border-control bg-card px-3 text-body text-foreground shadow-raised transition-colors dark:bg-input/30",
   "placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
   "aria-invalid:border-destructive",
 );

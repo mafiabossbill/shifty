@@ -5,7 +5,7 @@ import "./globals.css";
 import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { APP_CONFIG } from "@/lib/app-config";
-import { THEME_COLORS, THEME_INIT_SCRIPT } from "@/lib/theme";
+import { DEFAULT_ACCENT, THEME_COLORS, THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -38,7 +38,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang={APP_CONFIG.locale} suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full`}>
+    <html lang={APP_CONFIG.locale} data-accent={DEFAULT_ACCENT} suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full`}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>

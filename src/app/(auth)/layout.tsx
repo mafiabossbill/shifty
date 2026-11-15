@@ -18,7 +18,7 @@ function SyncNotSetUp() {
         You can still track everything: your sessions are saved on this device. Accounts and syncing between devices
         switch on once this deployment is connected to its database.
       </AuthHeading>
-      <Link href="/" className="inline-flex min-h-11 items-center underline decoration-control underline-offset-4 hover:decoration-foreground md:min-h-0">
+      <Link href="/" className="inline-flex min-h-11 items-center text-primary underline decoration-primary/40 underline-offset-4 hover:decoration-primary md:min-h-0">
         Back to {APP_CONFIG.name}
       </Link>
     </>

@@ -30,7 +30,8 @@ export interface SegmentedControlProps<T extends string> {
 /**
  * One choice from a few (Today / Week / Month / Year; Light / Dark / System). Applies at once (no Save).
  * A radio group: Tab focuses the selection, arrow keys move it. The selection is marked twice:
- * a raised surface and darker text. For more than about five options use a Select.
+ * a raised surface and darker text (not the action colour: a view is not an action).
+ * For more than about five options use a Select.
  */
 export function SegmentedControl<T extends string>({
   value,
@@ -49,7 +50,7 @@ export function SegmentedControl<T extends string>({
       orientation="horizontal"
       loop
       className={cn(
-        "inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-md bg-neutral-100 p-0.5 [scrollbar-width:none]",
+        "inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-md border bg-neutral-100 p-0.5 [scrollbar-width:none]",
         fullWidth ? "flex w-full" : "w-fit",
         className,
       )}
@@ -64,7 +65,7 @@ export function SegmentedControl<T extends string>({
           className={cn(
             "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-sm px-3 whitespace-nowrap text-muted-foreground transition-colors",
             "hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
-            "data-[state=checked]:bg-background data-[state=checked]:text-foreground data-[state=checked]:shadow-raised dark:data-[state=checked]:bg-neutral-300",
+            "data-[state=checked]:bg-card data-[state=checked]:text-foreground data-[state=checked]:shadow-raised dark:data-[state=checked]:bg-neutral-300",
             "[&_svg]:size-3.5 [&_svg]:shrink-0",
             size === "sm" ? "h-6 text-caption max-md:h-8" : "h-7 text-body max-md:h-9",
             fullWidth ? "min-w-0 flex-1" : "shrink-0",
